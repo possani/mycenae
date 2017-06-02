@@ -47,42 +47,21 @@ func New(
 	lgr *zap.Logger,
 	sts *tsstats.StatsTS,
 	persist depot.Persistence,
-	wal *WAL,
+	w *WAL,
 ) *Storage {
 
 	stats = sts
 	gblog = lgr
 
-	s := &Storage{
+	return &Storage{
 		stop:     make(chan struct{}),
 		tsmap:    make(map[string]*serie),
 		localTS:  localTSmap{tsmap: make(map[string]Meta)},
 		localTSC: make(chan Meta, 1000),
 		dump:     make(chan struct{}),
+		wal:      w,
 		persist:  persist,
-		wal:      wal,
 	}
-
-	go func() {
-		time.Sleep(time.Minute)
-		ptsChan := wal.load()
-		for pts := range ptsChan {
-			for _, p := range pts {
-				err := s.getSerie(p.KSID, p.TSID).addPoint(p.T, p.V)
-				if err != nil {
-					gblog.Error(
-						"",
-						zap.String("package", "gorilla"),
-						zap.String("func", "storage/New"),
-						zap.Error(err),
-					)
-				}
-			}
-		}
-	}()
-
-	return s
-
 }
 
 // Load dispatch a goroutine to save buckets
@@ -165,11 +144,7 @@ func (s *Storage) Delete(m Meta) <-chan []*pb.Point {
 //Add new point in a timeseries
 func (s *Storage) Write(ksid, tsid string, t int64, v float32) gobol.Error {
 	s.wal.Add(ksid, tsid, t, v)
-	gblog.Debug(
-		"inserting point",
-		zap.String("package", "gorilla"),
-		zap.String("func", "storage/Write"),
-	)
+
 	return s.getSerie(ksid, tsid).addPoint(t, v)
 }
 

@@ -13,13 +13,10 @@ const (
 
 // Bucket is exported to satisfy gob
 type bucket struct {
-	points  [bucketSize]*bucketPoint
-	created int64
-	timeout int64
-	start   int64
-	end     int64
-	mtx     sync.RWMutex
-	count   int
+	points [bucketSize]*bucketPoint
+	id     int64
+	mtx    sync.RWMutex
+	count  int
 }
 
 type bucketPoint struct {
@@ -28,10 +25,7 @@ type bucketPoint struct {
 }
 
 func newBucket(key int64) *bucket {
-	return &bucket{
-		created: key,
-		timeout: bucketSize,
-	}
+	return &bucket{id: key}
 }
 
 /*
@@ -45,7 +39,7 @@ func (b *bucket) add(date int64, value float32) (int64, gobol.Error) {
 	b.mtx.Lock()
 	defer b.mtx.Unlock()
 
-	delta := date - b.created
+	delta := date - b.id
 
 	if delta < 0 {
 		return delta, errAddPoint(
@@ -68,16 +62,7 @@ func (b *bucket) add(date int64, value float32) (int64, gobol.Error) {
 	}
 
 	b.points[delta] = &bucketPoint{date, value}
-
 	b.count++
-
-	if date > b.end {
-		b.end = date
-	}
-
-	if date < b.start || b.start == 0 {
-		b.start = date
-	}
 
 	return delta, nil
 }
@@ -88,18 +73,18 @@ func (b *bucket) rangePoints(id int, start, end int64, queryCh chan query) {
 
 	pts := make([]*pb.Point, b.count)
 	index := 0
-	if b.start >= start || b.end <= end {
-		for i := 0; i <= bucketSize-1; i++ {
-			if b.points[i] != nil {
-				if b.points[i].t >= start && b.points[i].t <= end {
-					pts[index] = &pb.Point{Date: b.points[i].t, Value: b.points[i].v}
+
+	if start >= b.id || end >= b.id {
+
+		for _, p := range b.points {
+			if p != nil {
+				if p.t >= start && p.t <= end {
+					pts[index] = &pb.Point{Date: p.t, Value: p.v}
 					index++
 				}
 			}
 		}
 	}
-
-	//gblog.Sugar().Infof("%v points read from bucket %v", index, id)
 
 	queryCh <- query{
 		id:  id,
@@ -108,15 +93,15 @@ func (b *bucket) rangePoints(id int, start, end int64, queryCh chan query) {
 
 }
 
-func (b *bucket) dumpPoints() []*Pnt {
+func (b *bucket) dumpPoints() []*pb.Point {
 	b.mtx.Lock()
 	defer b.mtx.Unlock()
 
-	pts := make([]*Pnt, b.count)
+	pts := make([]*pb.Point, b.count)
 	index := 0
 	for i := 0; i < bucketSize; i++ {
 		if b.points[i] != nil {
-			pts[index] = &Pnt{Date: b.points[i].t, Value: b.points[i].v}
+			pts[index] = &pb.Point{Date: b.points[i].t, Value: b.points[i].v}
 			index++
 		}
 	}

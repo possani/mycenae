@@ -13,14 +13,15 @@ import (
 )
 
 type serie struct {
-	mtx     sync.RWMutex
-	ksid    string
-	tsid    string
-	bucket  *bucket
-	blocks  [maxBlocks]block
-	index   int
-	timeout int64
-	persist depot.Persistence
+	mtx        sync.RWMutex
+	ksid       string
+	tsid       string
+	bucket     *bucket
+	blocks     [maxBlocks]block
+	index      int
+	timeout    int64
+	persist    depot.Persistence
+	persistMtx sync.RWMutex
 }
 
 type query struct {
@@ -39,60 +40,53 @@ func newSerie(persist depot.Persistence, ksid, tsid string) *serie {
 		bucket:  newBucket(BlockID(time.Now().Unix())),
 	}
 
-	go s.init()
+	s.init()
 
 	return s
 }
 
 func (t *serie) init() {
 
-	t.mtx.Lock()
-	defer t.mtx.Unlock()
-
-	gblog.Debug(
-		"initializing serie",
+	log := gblog.With(
 		zap.String("package", "gorilla"),
 		zap.String("func", "serie/init"),
 		zap.String("ksid", t.ksid),
 		zap.String("tsid", t.tsid),
 	)
 
+	t.mtx.Lock()
+	defer t.mtx.Unlock()
+
+	log.Debug("initializing serie")
+
 	now := time.Now().Unix()
 	bktid := BlockID(now)
 
 	bktPoints, err := t.persist.Read(t.ksid, t.tsid, bktid)
 	if err != nil {
-		gblog.Error(
+		log.Error(
 			"error to initialize bucket",
-			zap.String("ksid", t.ksid),
-			zap.String("tsid", t.tsid),
 			zap.Int64("blkid", bktid),
 			zap.Error(err),
-			zap.String("package", "gorilla"),
-			zap.String("func", "serie/init"),
 		)
 	}
 
 	if len(bktPoints) >= headerSize {
-		dec := tsz.NewDecoder(bktPoints)
-
-		var date int64
-		var value float32
-		for dec.Scan(&date, &value) {
-			t.bucket.add(date, value)
-		}
-
-		if err := dec.Close(); err != nil {
-			gblog.Error(
+		pts, _, err := t.decode(bktPoints, bktid)
+		if err != nil {
+			log.Error(
 				"error to initialize bucket",
-				zap.String("ksid", t.ksid),
-				zap.String("tsid", t.tsid),
 				zap.Int64("blkid", bktid),
 				zap.Error(err),
-				zap.String("package", "gorilla"),
-				zap.String("func", "serie/init"),
 			)
 		}
+
+		for _, p := range pts {
+			if p != nil {
+				t.bucket.add(p.Date, p.Value)
+			}
+		}
+
 	}
 
 	blkTime := now - int64(2*hour)
@@ -104,38 +98,19 @@ func (t *serie) init() {
 		t.blocks[i].id = bktid
 		t.blocks[i].start = bktid
 		t.blocks[i].end = bktid + int64(bucketSize-1)
-		t.blocks[i].count = bucketSize
+		t.blocks[i].SetCount(bucketSize)
 
 		bktPoints, err := t.persist.Read(t.ksid, t.tsid, bktid)
 		if err != nil {
-			gblog.Error(
+			log.Error(
 				"error to initialize block",
-				zap.String("ksid", t.ksid),
-				zap.String("tsid", t.tsid),
 				zap.Int64("blkid", bktid),
 				zap.Error(err),
-				zap.String("package", "gorilla"),
-				zap.String("func", "serie/init"),
 			)
 			continue
 		}
 
-		if len(bktPoints) >= headerSize {
-
-			gblog.Debug(
-				"",
-				zap.String("ksid", t.ksid),
-				zap.String("tsid", t.tsid),
-				zap.Int64("blkid", bktid),
-				zap.Int("index", i),
-				zap.Int("size", len(bktPoints)),
-				zap.String("package", "gorilla"),
-				zap.String("func", "serie/init"),
-			)
-
-			t.blocks[i].points = bktPoints
-
-		}
+		t.blocks[i].SetPoints(bktPoints)
 
 		blkTime = blkTime - int64(bucketSize)
 	}
@@ -145,17 +120,16 @@ func (t *serie) addPoint(date int64, value float32) gobol.Error {
 	t.mtx.Lock()
 	defer t.mtx.Unlock()
 
+	log := gblog.With(
+		zap.String("ksid", t.ksid),
+		zap.String("tsid", t.tsid),
+		zap.String("package", "storage"),
+		zap.String("func", "serie/addPoint"),
+	)
+
 	delta, err := t.bucket.add(date, value)
 	if err != nil {
-		if delta >= t.timeout {
-
-			gblog.Debug(
-				"",
-				zap.String("ksid", t.ksid),
-				zap.String("tsid", t.tsid),
-				zap.String("package", "storage/serie"),
-				zap.String("func", "addPoint"),
-			)
+		if delta >= bucketSize {
 
 			go t.store(t.bucket)
 			t.bucket = newBucket(BlockID(date))
@@ -164,144 +138,113 @@ func (t *serie) addPoint(date int64, value float32) gobol.Error {
 			return err
 		}
 
-		gblog.Debug(
-			"point out of order, updating serie",
-			zap.String("ksid", t.ksid),
-			zap.String("tsid", t.tsid),
-			zap.String("package", "gorilla"),
-			zap.String("func", "serie/addPoint"),
-		)
+		log.Debug("point out of order, updating serie")
 		return t.update(date, value)
 	}
 
-	gblog.Debug(
-		"point written successfully",
-		zap.String("ksid", t.ksid),
-		zap.String("tsid", t.tsid),
-		zap.String("package", "gorilla"),
-		zap.String("func", "serie/addPoint"),
-	)
+	log.Debug("point written successfully")
 	return nil
 }
 
 func (t *serie) update(date int64, value float32) gobol.Error {
-
-	f := "serie/update"
+	t.persistMtx.Lock()
+	defer t.persistMtx.Unlock()
 
 	blkID := BlockID(date)
 
-	index := getIndex(blkID)
-
-	if t.blocks[index].id == blkID {
-
-		gblog.Debug(
-			"updating block in memory",
-			zap.String("ksid", t.ksid),
-			zap.String("tsid", t.tsid),
-			zap.Int64("blkid", blkID),
-			zap.String("package", "gorilla"),
-			zap.String("func", f),
-		)
-
-		gerr := t.blocks[index].update(date, value)
-		if gerr != nil {
-			gblog.Error(
-				gerr.Error(),
-				zap.String("ksid", t.ksid),
-				zap.String("tsid", t.tsid),
-				zap.Int64("blkid", blkID),
-				zap.String("package", "gorilla"),
-				zap.String("func", f),
-				zap.Error(gerr),
-			)
-			return gerr
-		}
-
-		gerr = t.persist.Write(t.ksid, t.tsid, blkID, t.blocks[index].points)
-		if gerr != nil {
-			gblog.Error(
-				gerr.Error(),
-				zap.String("ksid", t.ksid),
-				zap.String("tsid", t.tsid),
-				zap.String("package", "gorilla"),
-				zap.String("func", "serie/update"),
-				zap.Error(gerr),
-			)
-
-			return gerr
-		}
-
-		return nil
-	}
-
-	pts, gerr := t.persist.Read(t.ksid, t.tsid, blkID)
-	if gerr != nil {
-		return gerr
-	}
-
-	bkt := newBucket(blkID)
-
-	if len(pts) < headerSize {
-
-		_, gerr := bkt.add(date, value)
-		if gerr != nil {
-			return gerr
-		}
-
-		pts, err := t.encode(bkt)
-		if err != nil {
-			return errTsz(f, t.ksid, t.tsid, blkID, err)
-		}
-
-		if len(pts) >= headerSize {
-			gblog.Debug(
-				"updating empty block in cassandra",
-				zap.String("ksid", t.ksid),
-				zap.String("tsid", t.tsid),
-				zap.Int64("blkid", blkID),
-				zap.String("package", "gorilla"),
-				zap.String("func", f),
-			)
-			return t.persist.Write(t.ksid, t.tsid, blkID, pts)
-		}
-		return nil
-	}
-
-	dec := tsz.NewDecoder(pts)
-	var d int64
-	var v float32
-
-	for dec.Scan(&d, &v) {
-		_, gerr := bkt.add(d, v)
-		if gerr != nil {
-			return gerr
-		}
-	}
-	err := dec.Close()
-	if err != nil {
-		return errTsz(f, t.ksid, t.tsid, blkID, err)
-	}
-
-	delta, gerr := bkt.add(date, value)
-	if gerr != nil {
-		return gerr
-	}
-	gblog.Debug(
-		"updating block in cassandra",
+	log := gblog.With(
 		zap.String("ksid", t.ksid),
 		zap.String("tsid", t.tsid),
 		zap.Int64("blkid", blkID),
-		zap.Int64("delta", delta),
+		zap.Int64("pointDate", date),
+		zap.Float32("pointValue", value),
 		zap.String("package", "gorilla"),
-		zap.String("func", f),
+		zap.String("func", "serie/update"),
 	)
 
-	pts, err = t.encode(bkt)
-	if err != nil {
-		return errTsz(f, t.ksid, t.tsid, blkID, err)
+	index := getIndex(blkID)
+
+	pByte, gerr := t.persist.Read(t.ksid, t.tsid, blkID)
+	if gerr != nil {
+		log.Error(
+			gerr.Error(),
+			zap.Error(gerr),
+		)
+		return gerr
 	}
 
-	return t.persist.Write(t.ksid, t.tsid, blkID, pts)
+	var pts [bucketSize]*pb.Point
+	var count int
+	if len(pByte) >= headerSize {
+		points, c, gerr := t.decode(pByte, blkID)
+		if gerr != nil {
+			log.Error(
+				gerr.Error(),
+				zap.Error(gerr),
+			)
+			return gerr
+		}
+		pts = points
+		count = c
+	}
+
+	delta := date - blkID
+
+	log.Debug(
+		"point delta",
+		zap.Int64("delta", delta),
+	)
+
+	if pts[delta] == nil {
+		count++
+	}
+	pts[delta] = &pb.Point{Date: date, Value: value}
+
+	ptsByte, gerr := t.encode(pts[:], blkID)
+	if gerr != nil {
+		log.Error(
+			gerr.Error(),
+			zap.Int64("delta", delta),
+			zap.Int("count", count),
+			zap.Int("blockSize", len(ptsByte)),
+			zap.Error(gerr),
+		)
+		return gerr
+	}
+
+	gerr = t.persist.Write(t.ksid, t.tsid, blkID, ptsByte)
+	if gerr != nil {
+		log.Error(
+			gerr.Error(),
+			zap.Int64("delta", delta),
+			zap.Int("count", count),
+			zap.Int("blockSize", len(ptsByte)),
+			zap.Error(gerr),
+		)
+		return gerr
+	}
+
+	if t.blocks[index].id == blkID {
+		log.Debug(
+			"updating block in memory",
+			zap.Int64("delta", delta),
+			zap.Int("count", count),
+			zap.Int("blockSize", len(ptsByte)),
+		)
+
+		t.blocks[index].SetPoints(ptsByte)
+		t.blocks[index].SetCount(count)
+	}
+
+	log.Debug(
+		"block updated",
+		zap.Int64("delta", delta),
+		zap.Int("blockSize", len(ptsByte)),
+		zap.Int("count", count),
+	)
+
+	return nil
+
 }
 
 func (t *serie) read(start, end int64) ([]*pb.Point, gobol.Error) {
@@ -347,6 +290,9 @@ func (t *serie) read(start, end int64) ([]*pb.Point, gobol.Error) {
 
 	if oldest == 0 {
 		oldest = time.Now().Unix() - int64(26*hour)
+	}
+	if end < oldest || end > time.Now().Unix() {
+		oldest = end
 	}
 	idx := index
 	// index must be from oldest point to the newest
@@ -403,15 +349,41 @@ func (t *serie) read(start, end int64) ([]*pb.Point, gobol.Error) {
 }
 
 func (t *serie) readPersistence(start, end int64) ([]*pb.Point, gobol.Error) {
+	t.persistMtx.Lock()
+	defer t.persistMtx.Unlock()
 
 	oldBlocksID := []int64{}
 
-	for x := start; x <= end; x = x + (2 * hour) {
-		oldBlocksID = append(oldBlocksID, BlockID(x))
+	x := start
+
+	blkidEnd := BlockID(end)
+	for {
+		blkidStart := BlockID(x)
+		oldBlocksID = append(oldBlocksID, blkidStart)
+
+		x += 2 * hour
+		if blkidStart >= blkidEnd {
+			break
+		}
 	}
+
+	log := gblog.With(
+		zap.String("ksid", t.ksid),
+		zap.String("tsid", t.tsid),
+		zap.Int64("start", start),
+		zap.Int64("end", end),
+		zap.String("package", "gorilla"),
+		zap.String("func", "serie/readPersistence"),
+	)
 
 	var pts []*pb.Point
 	for _, blkid := range oldBlocksID {
+
+		log.Debug(
+			"reading from persistence",
+			zap.Int64("blockID", blkid),
+		)
+
 		pByte, err := t.persist.Read(t.ksid, t.tsid, blkid)
 		if err != nil {
 			return nil, err
@@ -419,12 +391,25 @@ func (t *serie) readPersistence(start, end int64) ([]*pb.Point, gobol.Error) {
 
 		if len(pByte) >= headerSize {
 
-			p, err := t.decode(pByte)
+			p, _, err := t.decode(pByte, blkid)
 			if err != nil {
-				return nil, errTsz("serie/readPersistence", t.ksid, t.tsid, blkid, err)
+				return nil, err
 			}
 
-			pts = append(pts, p...)
+			for i, np := range p {
+				if np != nil {
+					if np.Date >= start && np.Date <= end {
+						pts = append(pts, np)
+					}
+					log.Debug(
+						"point from persistence",
+						zap.Int64("blockID", blkid),
+						zap.Int64("pointDate", np.Date),
+						zap.Float32("pointValue", np.Value),
+						zap.Int("rangeIdx", i),
+					)
+				}
+			}
 		}
 	}
 
@@ -432,43 +417,107 @@ func (t *serie) readPersistence(start, end int64) ([]*pb.Point, gobol.Error) {
 
 }
 
-func (t *serie) encode(bkt *bucket) ([]byte, error) {
-	enc := tsz.NewEncoder(bkt.start)
+func (t *serie) encode(points []*pb.Point, id int64) ([]byte, gobol.Error) {
 
-	for _, pt := range bkt.dumpPoints() {
+	log := gblog.With(
+		zap.String("package", "storage/serie"),
+		zap.String("func", "encode"),
+		zap.String("ksid", t.ksid),
+		zap.String("tsid", t.tsid),
+		zap.Int64("blkid", id),
+	)
+
+	enc := tsz.NewEncoder(id)
+	var count int
+
+	for i, pt := range points {
 		if pt != nil {
 			enc.Encode(pt.Date, pt.Value)
+			count++
+			log.Debug(
+				"encoding point",
+				zap.Int64("date", pt.Date),
+				zap.Float32("value", pt.Value),
+				zap.Int("rangeIdx", i),
+				zap.Int("count", count),
+			)
 		}
 	}
 
-	return enc.Close()
+	pts, err := enc.Close()
+	if err != nil {
+		log.Error(
+			err.Error(),
+			zap.Error(err),
+			zap.Int("blockSize", len(pts)),
+			zap.Int("count", count),
+		)
+		return nil, errTsz("serie/encode", t.ksid, t.tsid, 0, err)
+	}
+
+	log.Debug(
+		"closed tsz encoding",
+		zap.Int("blockSize", len(pts)),
+		zap.Int("count", count),
+	)
+
+	return pts, nil
 
 }
 
-func (t *serie) decode(points []byte) ([]*pb.Point, error) {
+func (t *serie) decode(points []byte, id int64) ([bucketSize]*pb.Point, int, gobol.Error) {
 	dec := tsz.NewDecoder(points)
 
 	var pts [bucketSize]*pb.Point
 	var d int64
 	var v float32
-	var i int
+
+	var count int
+
+	log := gblog.With(
+		zap.String("package", "storage"),
+		zap.String("func", "serie/decode"),
+		zap.String("ksid", t.ksid),
+		zap.String("tsid", t.tsid),
+		zap.Int64("blkid", id),
+		zap.Int("blockSize", len(points)),
+	)
 
 	for dec.Scan(&d, &v) {
-		pts[i] = &pb.Point{Date: d, Value: v}
-		i++
+		delta := d - id
+		log.Debug(
+			"decoding point",
+			zap.Int64("pointDate", d),
+			zap.Float32("pointValue", v),
+			zap.Int64("delta", delta),
+		)
+		if delta >= 0 && delta < bucketSize {
+			pts[delta] = &pb.Point{Date: d, Value: v}
+			count++
+		}
 	}
 
 	if err := dec.Close(); err != nil {
-		return nil, err
+		log.Error(
+			err.Error(),
+			zap.Error(err),
+			zap.Int("count", count),
+		)
+		return [bucketSize]*pb.Point{}, 0, errTsz("serie/decode", t.ksid, t.tsid, 0, err)
 	}
 
-	return pts[:i], nil
+	log.Debug(
+		"closed tsz decoding",
+		zap.Int("count", count),
+	)
+
+	return pts, count, nil
 
 }
 
 func (t *serie) store(bkt *bucket) {
 
-	pts, err := t.encode(bkt)
+	pts, err := t.encode(bkt.dumpPoints(), bkt.id)
 	if err != nil {
 		gblog.Error(
 			"",
@@ -476,21 +525,19 @@ func (t *serie) store(bkt *bucket) {
 			zap.String("func", "serie/store"),
 			zap.String("ksid", t.ksid),
 			zap.String("tsid", t.tsid),
-			zap.Int64("blkid", bkt.created),
+			zap.Int64("blkid", bkt.id),
 			zap.Error(err),
 		)
 		return
 	}
 
-	t.index = getIndex(bkt.created)
-	t.blocks[t.index].id = bkt.created
-	t.blocks[t.index].start = bkt.start
-	t.blocks[t.index].end = bkt.end
-	t.blocks[t.index].count = bkt.count
-	t.blocks[t.index].points = pts
+	t.index = getIndex(bkt.id)
+	t.blocks[t.index].id = bkt.id
+	t.blocks[t.index].SetCount(bkt.count)
+	t.blocks[t.index].SetPoints(pts)
 
 	if len(pts) >= headerSize {
-		err = t.persist.Write(t.ksid, t.tsid, bkt.created, pts)
+		err = t.persist.Write(t.ksid, t.tsid, bkt.id, pts)
 		if err != nil {
 			gblog.Error(
 				"",
@@ -498,7 +545,7 @@ func (t *serie) store(bkt *bucket) {
 				zap.String("func", "serie/store"),
 				zap.String("ksid", t.ksid),
 				zap.String("tsid", t.tsid),
-				zap.Int64("blkid", bkt.created),
+				zap.Int64("blkid", bkt.id),
 				zap.Error(err),
 			)
 			return
