@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/billhathaway/consistentHash"
-	"github.com/prometheus/common/log"
 	"github.com/uol/gobol"
 
 	"github.com/uol/mycenae/lib/gorilla"
@@ -194,14 +193,24 @@ func (c *Cluster) Write(p *gorilla.Point) gobol.Error {
 		zap.Int("port", node.port),
 	)
 
-	if p != nil {
-		return node.write(&pb.TSPoint{
+	go func() {
+		err := node.write(&pb.TSPoint{
 			Ksid:  p.KsID,
 			Tsid:  p.ID,
 			Date:  p.Timestamp,
 			Value: *p.Message.Value,
 		})
-	}
+		if err != nil {
+			logger.Error(
+				"remote write",
+				zap.String("package", "cluster"),
+				zap.String("func", "Write"),
+				zap.String("addr", node.address),
+				zap.Int("port", node.port),
+				zap.Error(err),
+			)
+		}
+	}()
 
 	return nil
 }
@@ -299,7 +308,7 @@ func (c *Cluster) getNodes() {
 							continue
 						}
 
-						log.Debug(
+						logger.Debug(
 							"adding node",
 							zap.String("package", "cluster"),
 							zap.String("func", "getNodes"),
