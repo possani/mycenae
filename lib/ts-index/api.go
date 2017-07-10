@@ -27,10 +27,8 @@ type Backend interface {
 
 	// ListMetric lists all available metrics
 	ListMetric(string) ([]string, error)
-
 	// ListTagKeys lists all tag keys from the index
 	ListTagKeys(string) ([]string, error)
-
 	// ListTagValues lists all tag values given a tag key and metric, and a regexp
 	ListTagValues(string, string) ([]string, error)
 

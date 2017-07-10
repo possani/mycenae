@@ -43,8 +43,8 @@ arguments=(
 )
 
 if [ "${publish}" == "true" ]; then
-	arguments=( ${arguments[@]} '--publish' '8787:8080' )  
-	arguments=( ${arguments[@]} '--publish' '6666:6666' )  
+	arguments=( ${arguments[@]} '--publish' '8787:8080' )
+	arguments=( ${arguments[@]} '--publish' '6666:6666' )
 fi
 
 server=$(docker inspect --format "{{ .NetworkSettings.IPAddress }}" consulServer)
@@ -83,4 +83,3 @@ logfile=$(docker inspect --format='{{.LogPath}}' $did)
 echo "dockerID=${did} logFile=${logfile}"
 echo "sudo tail -f $logfile | jq -C --tab"
 sudo tail -f $logfile | jq -C --tab
-
