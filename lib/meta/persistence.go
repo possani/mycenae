@@ -6,10 +6,12 @@ import (
 
 	"github.com/uol/gobol"
 	"github.com/uol/gobol/rubber"
+	index "github.com/uol/mycenae/lib/ts-index"
 )
 
 type persistence struct {
 	esearch *rubber.Elastic
+	backend index.Backend
 }
 
 func (persist *persistence) HeadMetaFromES(index, eType, id string) (int, gobol.Error) {

@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/uol/gobol/rubber"
-	"github.com/uol/mycenae/lib/plot"
 	"github.com/uol/mycenae/lib/tsstats"
 )
 
@@ -156,21 +155,21 @@ func (i *esIndex) Query(m Metric, ps []KVPair, fs []Filter) ResultSet {
 		} `json:"hits"`
 	}
 
-	var query plot.QueryWrapper
+	var query queryWrapper
 	query.Size = 500
 	query.Query.Bool.Must = make([]interface{}, 1+len(ps)+len(fs))
 
-	query.Query.Bool.Must[0] = plot.Term{
+	query.Query.Bool.Must[0] = esTerm{
 		Term: map[string]string{
 			"metric": m.String(),
 		},
 	}
 
 	for i, pair := range ps {
-		var nested plot.EsNestedQuery
+		var nested esNestedQuery
 		nested.Nested.Path = "tagsNested"
 		nested.Nested.Query.Bool.Should = []interface{}{
-			plot.Term{
+			esTerm{
 				Term: map[string]string{
 					"tagsNested.tagKey":   pair.Key,
 					"tagsNested.tagValue": pair.Value,
@@ -181,7 +180,7 @@ func (i *esIndex) Query(m Metric, ps []KVPair, fs []Filter) ResultSet {
 	}
 
 	for i, pair := range fs {
-		var nested plot.EsNestedQuery
+		var nested esNestedQuery
 		nested.Nested.Path = "tagsNested"
 		nested.Nested.Query.Bool.Must = []interface{}{
 			queryMatch{
@@ -189,7 +188,7 @@ func (i *esIndex) Query(m Metric, ps []KVPair, fs []Filter) ResultSet {
 					"tagsNested.tagKey": pair.Key,
 				},
 			},
-			plot.EsRegexp{
+			esRegexp{
 				Regexp: map[string]string{
 					"tagsNested.tagValue": pair.Expression,
 				},
