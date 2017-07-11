@@ -73,6 +73,10 @@ func (i *tsIndex) Add(m Metric, p []KVPair, id ID) error {
 	return nil
 }
 
+func (i *tsIndex) Exists(id ID) (bool, error) {
+	return i.timeseries.Has(id), nil
+}
+
 func (i *tsIndex) ListMetric(expr string) ([]string, error) {
 	re, err := regexp.Compile(expr)
 	if err != nil {

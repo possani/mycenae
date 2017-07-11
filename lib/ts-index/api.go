@@ -1,6 +1,9 @@
 package index
 
-import "io"
+import (
+	"io"
+	"strconv"
+)
 
 // Metric refers to a timeseries metric
 type Metric string
@@ -18,12 +21,18 @@ type KVPair struct {
 // ID is a unique timeseries identifier
 type ID uint64
 
+func (id ID) String() string {
+	return strconv.FormatUint(uint64(id), 10)
+}
+
 // Backend defines the behaviour of the index
 type Backend interface {
 	// Add adds a new document to the index
 	Add(Metric, []KVPair, ID) error
 	// Query queries the underling index
 	Query(Metric, []KVPair, []Filter) ResultSet
+	// Exists checks whether an ID exists
+	Exists(ID) (bool, error)
 
 	// ListMetric lists all available metrics
 	ListMetric(string) ([]string, error)

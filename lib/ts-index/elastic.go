@@ -12,6 +12,7 @@ import (
 
 	"github.com/uol/gobol/rubber"
 	"github.com/uol/mycenae/lib/plot"
+	"github.com/uol/mycenae/lib/tsstats"
 )
 
 type esIndex struct {
@@ -20,6 +21,7 @@ type esIndex struct {
 	esType   string
 
 	client *rubber.Elastic
+	stats  *tsstats.StatsTS
 }
 
 func createESIndex(host, index string) (*esIndex, error) {
@@ -242,6 +244,18 @@ func (i *esIndex) Query(m Metric, ps []KVPair, fs []Filter) ResultSet {
 			fmt.Sprintf(`{"scroll": "1m", "scroll_id": "%s"}`, content.ScrollID),
 		)
 	}
+}
+
+func (i *esIndex) Exists(id ID) (bool, error) {
+	start := time.Now()
+	status, err := i.client.GetHead(i.index, i.esType, id.String())
+	if err != nil {
+		statsIndexError(i.stats, i.index, i.esType, "head")
+		return false, err
+	}
+
+	statsIndex(i.stats, i.index, i.esType, "head", time.Since(start))
+	return status == http.StatusOK, nil
 }
 
 func (i *esIndex) Store(io.Writer) error { return nil }

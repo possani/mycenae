@@ -475,8 +475,5 @@ func (meta *Meta) CheckTSID(esType, id string) (bool, gobol.Error) {
 	if gerr != nil {
 		return false, gerr
 	}
-	if respCode != 200 {
-		return false, nil
-	}
-	return true, nil
+	return respCode == 200, nil
 }
