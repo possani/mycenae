@@ -101,7 +101,6 @@ func New(
 	bc *bcache.Bcache,
 	set *Settings,
 ) (*Meta, error) {
-
 	d, err := time.ParseDuration(set.MetaSaveInterval)
 	if err != nil {
 		return nil, err
@@ -144,7 +143,6 @@ func New(
 }
 
 func (meta *Meta) metaCoordinator(saveInterval time.Duration, headInterval time.Duration) {
-
 	go func() {
 		ticker := time.NewTicker(saveInterval)
 		for {
@@ -203,7 +201,6 @@ func (meta *Meta) metaCoordinator(saveInterval time.Duration, headInterval time.
 			}
 
 		case p := <-meta.metaPntChan:
-
 			gerr := meta.generateBulk(p, true)
 			if gerr != nil {
 				gblog.Error(
@@ -213,11 +210,8 @@ func (meta *Meta) metaCoordinator(saveInterval time.Duration, headInterval time.
 			}
 
 			if meta.metaPayload.Len() > meta.settings.MaxMetaBulkSize {
-
 				meta.concBulk <- struct{}{}
-
 				bulk := &bytes.Buffer{}
-
 				err := meta.readMeta(bulk)
 				if err != nil {
 					gblog.Error(
@@ -227,12 +221,10 @@ func (meta *Meta) metaCoordinator(saveInterval time.Duration, headInterval time.
 					)
 					continue
 				}
-
 				go meta.saveBulk(bulk)
 			}
 
 		case p := <-meta.metaTxtChan:
-
 			gerr := meta.generateBulk(p, false)
 			if gerr != nil {
 				gblog.Error(
@@ -242,11 +234,8 @@ func (meta *Meta) metaCoordinator(saveInterval time.Duration, headInterval time.
 			}
 
 			if meta.metaPayload.Len() > meta.settings.MaxMetaBulkSize {
-
 				meta.concBulk <- struct{}{}
-
 				bulk := &bytes.Buffer{}
-
 				err := meta.readMeta(bulk)
 				if err != nil {
 					gblog.Error(
@@ -256,7 +245,6 @@ func (meta *Meta) metaCoordinator(saveInterval time.Duration, headInterval time.
 					)
 					continue
 				}
-
 				go meta.saveBulk(bulk)
 			}
 		}
@@ -264,7 +252,6 @@ func (meta *Meta) metaCoordinator(saveInterval time.Duration, headInterval time.
 }
 
 func (meta *Meta) readMeta(bulk *bytes.Buffer) error {
-
 	for {
 		b, err := meta.metaPayload.ReadBytes(124)
 		if err != nil {
@@ -272,7 +259,6 @@ func (meta *Meta) readMeta(bulk *bytes.Buffer) error {
 		}
 
 		b = b[:len(b)-1]
-
 		_, err = bulk.Write(b)
 		if err != nil {
 			return err
@@ -282,12 +268,10 @@ func (meta *Meta) readMeta(bulk *bytes.Buffer) error {
 			break
 		}
 	}
-
 	return nil
 }
 
 func (meta *Meta) Handle(ksts *string, pkt *pb.Meta) bool {
-
 	if meta.boltc.Get(ksts) {
 		/*
 			gblog.Debug(
@@ -310,14 +294,11 @@ func (meta *Meta) Handle(ksts *string, pkt *pb.Meta) bool {
 		meta.sm.add(ksts, pkt)
 		meta.metaPntChan <- pkt
 	}
-
 	return false
 }
 
 func (meta *Meta) SaveTxtMeta(packet *pb.Meta) {
-
 	ksts := ComposeID(packet.GetKsid(), packet.GetTsid())
-
 	if len(meta.metaTxtChan) >= meta.settings.MetaBufferSize {
 		gblog.Warn(
 			fmt.Sprintf("discarding point: %v", packet),
@@ -342,13 +323,10 @@ func (meta *Meta) SaveTxtMeta(packet *pb.Meta) {
 		meta.metaTxtChan <- packet
 		statsBulkPoints()
 	}
-
 }
 
 func (meta *Meta) generateBulk(packet *pb.Meta, number bool) gobol.Error {
-
 	var metricType, tagkType, tagvType, metaType string
-
 	if number {
 		metricType = "metric"
 		tagkType = "tagk"
@@ -376,7 +354,6 @@ func (meta *Meta) generateBulk(packet *pb.Meta, number bool) gobol.Error {
 
 	meta.metaPayload.Write(indexJSON)
 	meta.metaPayload.WriteString("\n")
-
 	metric := EsMetric{
 		Metric: packet.GetMetric(),
 	}
@@ -388,13 +365,9 @@ func (meta *Meta) generateBulk(packet *pb.Meta, number bool) gobol.Error {
 
 	meta.metaPayload.Write(docJSON)
 	meta.metaPayload.WriteString("\n")
-
 	cleanTags := []Tag{}
-
 	for _, tag := range packet.GetTags() {
-
 		if tag.GetKey() != "ksid" && tag.GetKey() != "ttl" {
-
 			idx := BulkType{
 				ID: EsIndex{
 					EsIndex: packet.GetKsid(),
@@ -402,16 +375,13 @@ func (meta *Meta) generateBulk(packet *pb.Meta, number bool) gobol.Error {
 					EsID:    tag.GetKey(),
 				},
 			}
-
 			indexJSON, err := json.Marshal(idx)
-
 			if err != nil {
 				return errMarshal("saveTsInfo", err)
 			}
 
 			meta.metaPayload.Write(indexJSON)
 			meta.metaPayload.WriteString("\n")
-
 			docTK := EsTagKey{
 				Key: tag.GetKey(),
 			}
@@ -423,7 +393,6 @@ func (meta *Meta) generateBulk(packet *pb.Meta, number bool) gobol.Error {
 
 			meta.metaPayload.Write(docJSON)
 			meta.metaPayload.WriteString("\n")
-
 			idx = BulkType{
 				ID: EsIndex{
 					EsIndex: packet.GetKsid(),
@@ -439,11 +408,9 @@ func (meta *Meta) generateBulk(packet *pb.Meta, number bool) gobol.Error {
 
 			meta.metaPayload.Write(indexJSON)
 			meta.metaPayload.WriteString("\n")
-
 			docTV := EsTagValue{
 				Value: tag.GetValue(),
 			}
-
 			docJSON, err = json.Marshal(docTV)
 			if err != nil {
 				return errMarshal("saveTsInfo", err)
@@ -451,12 +418,10 @@ func (meta *Meta) generateBulk(packet *pb.Meta, number bool) gobol.Error {
 
 			meta.metaPayload.Write(docJSON)
 			meta.metaPayload.WriteString("\n")
-
 			cleanTags = append(cleanTags, Tag{
 				Key:   tag.GetKey(),
 				Value: tag.GetValue(),
 			})
-
 		}
 	}
 
@@ -475,7 +440,6 @@ func (meta *Meta) generateBulk(packet *pb.Meta, number bool) gobol.Error {
 
 	meta.metaPayload.Write(indexJSON)
 	meta.metaPayload.WriteString("\n")
-
 	docM := MetaInfo{
 		ID:     packet.GetTsid(),
 		Metric: packet.GetMetric(),
@@ -489,14 +453,11 @@ func (meta *Meta) generateBulk(packet *pb.Meta, number bool) gobol.Error {
 
 	meta.metaPayload.Write(docJSON)
 	meta.metaPayload.WriteString("\n")
-
 	meta.metaPayload.WriteString("|")
-
 	return nil
 }
 
 func (meta *Meta) saveBulk(boby io.Reader) {
-
 	gerr := meta.persist.SaveBulkES(boby)
 	if gerr != nil {
 		gblog.Error(
@@ -504,12 +465,10 @@ func (meta *Meta) saveBulk(boby io.Reader) {
 			zap.String("func", "metaCoordinator/SaveBulkES"),
 		)
 	}
-
 	<-meta.concBulk
 }
 
 func (meta *Meta) CheckTSID(esType, id string) (bool, gobol.Error) {
-
 	info := strings.Split(id, "|")
 
 	respCode, gerr := meta.persist.HeadMetaFromES(info[0], esType, info[1])
@@ -519,6 +478,5 @@ func (meta *Meta) CheckTSID(esType, id string) (bool, gobol.Error) {
 	if respCode != 200 {
 		return false, nil
 	}
-
 	return true, nil
 }

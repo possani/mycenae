@@ -285,8 +285,13 @@ func BenchmarkElasticResults(t *testing.B) {
 	}
 	time.Sleep(time.Second * 10)
 
+	client, err := testEsClient()
+	if !assert.NoError(t, err) {
+		return
+	}
+
 	t.ResetTimer()
-	runBenchmarkAgainstBackend(t, testEsClient(), testcases)
+	runBenchmarkAgainstBackend(t, client, testcases)
 }
 
 func printDiff(t *testing.T, only string, s1, s2 ResultSet) {
@@ -313,7 +318,11 @@ func TestCompareResultsBetweenQAAndIndex(t *testing.T) {
 	}
 	time.Sleep(time.Second * 10)
 
-	client := testEsClient()
+	client, err := testEsClient()
+	if !assert.NoError(t, err) {
+		return
+	}
+
 	qaResults := runBenchmarkAgainstBackend(t, client, testcases)
 	localResults := runBenchmarkAgainstBackend(t, backend, testcases)
 

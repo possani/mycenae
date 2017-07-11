@@ -16,12 +16,15 @@ type tsIndex struct {
 	metrics map[Metric]ResultSet
 
 	metricTags map[Metric][]string
+	timeseries ResultSet
 }
 
 func createIndex() *tsIndex {
 	return &tsIndex{
 		metrics: make(map[Metric]ResultSet),
 		tags:    tree.NewWithStringComparator(),
+
+		timeseries: ResultSet{},
 	}
 }
 
@@ -34,6 +37,7 @@ func (i *tsIndex) Add(m Metric, p []KVPair, id ID) error {
 	i.Lock()
 	defer i.Unlock()
 
+	i.timeseries.Add(id)
 	if _, ok := i.metrics[m]; !ok {
 		i.metrics[m] = makeResultSet()
 	}
