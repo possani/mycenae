@@ -124,6 +124,7 @@ func (t *serie) addPoint(p *pb.TSPoint) gobol.Error {
 				"resetting block",
 				zap.Int64("blkid", blkid),
 			)
+			t.store(t.index)
 			t.blocks[t.index].reset(blkid)
 			t.blocks[t.index].add(p)
 			return nil
@@ -386,13 +387,11 @@ func (t *serie) read(start, end int64) ([]*pb.Point, gobol.Error) {
 
 	blksID := []int64{}
 
-	x := memStart
 	blkidEnd := BlockID(end)
 	for {
-		blkidStart := BlockID(x)
+		blkidStart := BlockID(memStart)
 		blksID = append(blksID, blkidStart)
 
-		x += 2 * hour
 		if blkidStart >= blkidEnd {
 			break
 		}
@@ -463,14 +462,11 @@ func (t *serie) readPersistence(start, end int64) ([]*pb.Point, gobol.Error) {
 
 	oldBlocksID := []int64{}
 
-	x := start
-
 	blkidEnd := BlockID(end)
 	for {
-		blkidStart := BlockID(x)
+		blkidStart := BlockID(start)
 		oldBlocksID = append(oldBlocksID, blkidStart)
 
-		x += 2 * hour
 		if blkidStart >= blkidEnd {
 			break
 		}
