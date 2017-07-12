@@ -470,10 +470,5 @@ func (meta *Meta) saveBulk(boby io.Reader) {
 
 func (meta *Meta) CheckTSID(esType, id string) (bool, gobol.Error) {
 	info := strings.Split(id, "|")
-
-	respCode, gerr := meta.persist.HeadMetaFromES(info[0], esType, info[1])
-	if gerr != nil {
-		return false, gerr
-	}
-	return respCode == 200, nil
+	return meta.persist.HeadMetaFromES(info[0], esType, info[1])
 }

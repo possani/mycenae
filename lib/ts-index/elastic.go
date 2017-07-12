@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"time"
 
+	"go.uber.org/zap"
+
 	"github.com/uol/gobol/rubber"
 	"github.com/uol/mycenae/lib/tsstats"
 )
@@ -23,8 +25,8 @@ type esIndex struct {
 	stats  *tsstats.StatsTS
 }
 
-func createESIndex(host, index string) (*esIndex, error) {
-	client, err := rubber.New(nil, rubber.Settings{
+func createESIndex(host, index, itype string, logger *zap.Logger) (*esIndex, error) {
+	client, err := rubber.New(logger, rubber.Settings{
 		Seed:    fmt.Sprintf("%s:9200", host),
 		Type:    rubber.ConfigWeightedBackend,
 		Timeout: time.Minute,
@@ -36,7 +38,7 @@ func createESIndex(host, index string) (*esIndex, error) {
 	newIndex := &esIndex{
 		endpoint: fmt.Sprintf("%s:9200", host),
 		index:    index,
-		esType:   "meta",
+		esType:   itype,
 
 		client: client,
 	}
@@ -44,8 +46,8 @@ func createESIndex(host, index string) (*esIndex, error) {
 }
 
 // CreateElastic creates an elastic backend
-func CreateElastic(host, index string) (Backend, error) {
-	return createESIndex(host, index)
+func CreateElastic(host, index, itype string, logger *zap.Logger) (Backend, error) {
+	return createESIndex(host, index, itype, logger)
 }
 
 func (i *esIndex) Add(Metric, []KVPair, ID) error { return nil }

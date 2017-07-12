@@ -2,6 +2,8 @@ package index
 
 import (
 	"sync"
+
+	"go.uber.org/zap"
 )
 
 // setKey is a key to use in the set lookup
@@ -22,6 +24,16 @@ func CreateSet() *Set {
 	return &Set{indexes: make(map[setKey]Backend)}
 }
 
+// CreateElasticSet creates a set of indexes that generate elastic clients
+func CreateElasticSet(host string, logger *zap.Logger) *Set {
+	set := CreateSet()
+	set.generate = func(index, itype string) Backend {
+		backend, _ := createESIndex(host, index, itype, logger)
+		return backend
+	}
+	return set
+}
+
 // Get retrieves a specific index
 func (s *Set) Get(index, itype string) Backend {
 	s.RLock()
@@ -33,7 +45,9 @@ func (s *Set) Get(index, itype string) Backend {
 		return retrieve
 	}
 	if s.generate != nil {
-		return s.generate(index, itype)
+		gen := s.generate(index, itype)
+		s.indexes[key] = gen
+		return gen
 	}
 	return nil
 }

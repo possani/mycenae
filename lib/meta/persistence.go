@@ -2,6 +2,7 @@ package meta
 
 import (
 	"io"
+	"net/http"
 	"time"
 
 	"github.com/uol/gobol"
@@ -11,18 +12,26 @@ import (
 
 type persistence struct {
 	esearch *rubber.Elastic
-	backend index.Backend
+	index   *index.Set
 }
 
-func (persist *persistence) HeadMetaFromES(index, eType, id string) (int, gobol.Error) {
-	start := time.Now()
-	respCode, err := persist.esearch.GetHead(index, eType, id)
-	if err != nil {
-		statsIndexError(index, eType, "head")
-		return 0, errPersist("HeadMetaFromES", err)
+func (persist *persistence) HeadMetaFromES(esindex, eType, id string) (bool, gobol.Error) {
+	if persist.index != nil {
+		exists, err := persist.index.Get(esindex, eType).Exists(index.ParseID(id))
+		if err != nil {
+			return false, errPersist("HeadMetaFromES", err)
+		}
+		return exists, nil
 	}
-	statsIndex(index, eType, "head", time.Since(start))
-	return respCode, nil
+
+	start := time.Now()
+	respCode, err := persist.esearch.GetHead(esindex, eType, id)
+	if err != nil {
+		statsIndexError(esindex, eType, "head")
+		return false, errPersist("HeadMetaFromES", err)
+	}
+	statsIndex(esindex, eType, "head", time.Since(start))
+	return respCode == http.StatusOK, nil
 }
 
 func (persist *persistence) SaveBulkES(body io.Reader) gobol.Error {

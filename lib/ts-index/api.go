@@ -25,6 +25,12 @@ func (id ID) String() string {
 	return strconv.FormatUint(uint64(id), 10)
 }
 
+// ParseID parses the ID into a number
+func ParseID(id string) ID {
+	val, _ := strconv.ParseUint(id, 10, 64)
+	return ID(val)
+}
+
 // Backend defines the behaviour of the index
 type Backend interface {
 	// Add adds a new document to the index
