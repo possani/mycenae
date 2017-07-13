@@ -121,7 +121,7 @@ func New(
 		concBulk:    make(chan struct{}, set.MaxConcurrentBulks),
 		metaPntChan: make(chan *pb.Meta, set.MetaBufferSize),
 		metaTxtChan: make(chan *pb.Meta, set.MetaBufferSize),
-		metaPayload: &bytes.Buffer{},
+		metaPayload: bytes.NewBuffer(nil),
 		persist: persistence{
 			esearch: es,
 		},
@@ -179,13 +179,9 @@ func (meta *Meta) metaCoordinator(saveInterval time.Duration, headInterval time.
 	for {
 		select {
 		case <-ticker.C:
-
 			if meta.metaPayload.Len() != 0 {
-
 				meta.concBulk <- struct{}{}
-
-				bulk := &bytes.Buffer{}
-
+				bulk := bytes.NewBuffer(nil)
 				err := meta.readMeta(bulk)
 				if err != nil {
 					gblog.Error(
@@ -195,11 +191,8 @@ func (meta *Meta) metaCoordinator(saveInterval time.Duration, headInterval time.
 					)
 					continue
 				}
-
 				go meta.saveBulk(bulk)
-
 			}
-
 		case p := <-meta.metaPntChan:
 			gerr := meta.generateBulk(p, true)
 			if gerr != nil {
@@ -211,7 +204,7 @@ func (meta *Meta) metaCoordinator(saveInterval time.Duration, headInterval time.
 
 			if meta.metaPayload.Len() > meta.settings.MaxMetaBulkSize {
 				meta.concBulk <- struct{}{}
-				bulk := &bytes.Buffer{}
+				bulk := bytes.NewBuffer(nil)
 				err := meta.readMeta(bulk)
 				if err != nil {
 					gblog.Error(
@@ -235,7 +228,7 @@ func (meta *Meta) metaCoordinator(saveInterval time.Duration, headInterval time.
 
 			if meta.metaPayload.Len() > meta.settings.MaxMetaBulkSize {
 				meta.concBulk <- struct{}{}
-				bulk := &bytes.Buffer{}
+				bulk := bytes.NewBuffer(nil)
 				err := meta.readMeta(bulk)
 				if err != nil {
 					gblog.Error(
@@ -253,7 +246,7 @@ func (meta *Meta) metaCoordinator(saveInterval time.Duration, headInterval time.
 
 func (meta *Meta) readMeta(bulk *bytes.Buffer) error {
 	for {
-		b, err := meta.metaPayload.ReadBytes(124)
+		b, err := meta.metaPayload.ReadBytes(124) // |
 		if err != nil {
 			return err
 		}
@@ -326,17 +319,17 @@ func (meta *Meta) SaveTxtMeta(packet *pb.Meta) {
 }
 
 func (meta *Meta) generateBulk(packet *pb.Meta, number bool) gobol.Error {
-	var metricType, tagkType, tagvType, metaType string
+	var (
+		metricType = "metrictext"
+		tagkType   = "tagktext"
+		tagvType   = "tagvtext"
+		metaType   = "metatext"
+	)
 	if number {
 		metricType = "metric"
 		tagkType = "tagk"
 		tagvType = "tagv"
 		metaType = "meta"
-	} else {
-		metricType = "metrictext"
-		tagkType = "tagktext"
-		tagvType = "tagvtext"
-		metaType = "metatext"
 	}
 
 	idx := BulkType{

@@ -7,23 +7,13 @@ import (
 
 	"github.com/uol/gobol"
 	"github.com/uol/gobol/rubber"
-	index "github.com/uol/mycenae/lib/ts-index"
 )
 
 type persistence struct {
 	esearch *rubber.Elastic
-	index   *index.Set
 }
 
 func (persist *persistence) HeadMetaFromES(esindex, eType, id string) (bool, gobol.Error) {
-	if persist.index != nil {
-		exists, err := persist.index.Get(esindex, eType).Exists(index.ParseID(id))
-		if err != nil {
-			return false, errPersist("HeadMetaFromES", err)
-		}
-		return exists, nil
-	}
-
 	start := time.Now()
 	respCode, err := persist.esearch.GetHead(esindex, eType, id)
 	if err != nil {
