@@ -88,10 +88,10 @@ func (s *Storage) Stop() {
 }
 
 // Load dispatch a goroutine to save buckets
-// in cassandra. All buckets with more then a hour
+// in cassandra. All buckets with more than an hour (não seriam 2h?)
 // must be compressed and saved in cassandra.
 func (s *Storage) Load() {
-	go func(s *Storage) {
+	go func() {
 		ticker := time.NewTicker(time.Minute)
 
 		for {
@@ -105,8 +105,7 @@ func (s *Storage) Load() {
 						// we need a way to persist ts older than 2h
 						// after 26h the serie must be out of memory
 						s.updateLastCheck(&serie)
-						t := s.getSerie(serie.KSID, serie.TSID)
-						if t.toDepot() {
+						if s.getSerie(serie.KSID, serie.TSID).toDepot() {
 							s.deleteSerie(serie.KSID, serie.TSID)
 						}
 					}
@@ -149,7 +148,7 @@ func (s *Storage) Load() {
 
 			}
 		}
-	}(s)
+	}()
 }
 
 func (s *Storage) ListSeries() []Meta {
@@ -227,12 +226,10 @@ func (s *Storage) getSerie(ksid, tsid string) *serie {
 	s.mtx.RUnlock()
 
 	if serie == nil {
+
 		s.mtx.Lock()
-		serie = s.tsmap[id]
-		if serie == nil {
-			serie = newSerie(s.persist, ksid, tsid)
-			s.tsmap[id] = serie
-		}
+		serie = newSerie(s.persist, ksid, tsid)
+		s.tsmap[id] = serie
 		s.mtx.Unlock()
 
 		s.localTS.mtx.Lock()
@@ -269,7 +266,7 @@ func (s *Storage) deleteSerie(ksid, tsid string) {
 }
 
 func (s *Storage) id(ksid, tsid string) string {
-	id := make([]byte, len(ksid)+len(tsid))
+	id := make([]byte, len(ksid+tsid))
 	copy(id, ksid)
 	copy(id[len(ksid):], tsid)
 	return string(id)
