@@ -226,10 +226,12 @@ func (s *Storage) getSerie(ksid, tsid string) *serie {
 	s.mtx.RUnlock()
 
 	if serie == nil {
-
 		s.mtx.Lock()
-		serie = newSerie(s.persist, ksid, tsid)
-		s.tsmap[id] = serie
+		serie = s.tsmap[id]
+		if serie == nil {
+			serie = newSerie(s.persist, ksid, tsid)
+			s.tsmap[id] = serie
+		}
 		s.mtx.Unlock()
 
 		s.localTS.mtx.Lock()
