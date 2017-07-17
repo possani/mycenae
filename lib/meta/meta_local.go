@@ -8,8 +8,8 @@ import (
 	index "github.com/uol/mycenae/lib/ts-index"
 )
 
-// Interface defines the behaviour of Meta
-type Interface interface {
+// Backend defines the behaviour of Meta
+type Backend interface {
 	Handle(ksts *string, pkt *pb.Meta) bool
 	SaveTxtMeta(packet *pb.Meta)
 	CheckTSID(esType, id string) (bool, gobol.Error)
@@ -20,7 +20,7 @@ type localMeta struct {
 }
 
 // NewLocal creates a local file meta store
-func NewLocal() Interface {
+func NewLocal() Backend {
 	return &localMeta{
 		index: index.CreateSet(),
 	}

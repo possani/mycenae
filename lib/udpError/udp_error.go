@@ -66,7 +66,6 @@ func (error UDPerror) listErrorTags(
 	size,
 	from int64,
 ) ([]string, int, gobol.Error) {
-
 	_, found, gerr := error.boltc.GetKeyspace(keyspace)
 	if gerr != nil {
 		return nil, 0, gerr
@@ -77,7 +76,6 @@ func (error UDPerror) listErrorTags(
 	}
 
 	var esQuery QueryWrapper
-
 	if metric != "" {
 		metricTerm := EsRegexp{
 			Regexp: map[string]string{
@@ -88,7 +86,6 @@ func (error UDPerror) listErrorTags(
 	}
 
 	for _, tag := range tags {
-
 		if tag.Key != "" {
 			tagKeyTerm := EsRegexp{
 				Regexp: map[string]string{
@@ -119,19 +116,13 @@ func (error UDPerror) listErrorTags(
 	}
 
 	var esResp EsResponseTag
-
 	gerr = error.persist.ListESErrorTags(keyspace, esType, esQuery, &esResp)
-
 	total := esResp.Hits.Total
 
 	var keys []string
-
 	for _, docs := range esResp.Hits.Hits {
-
 		key := docs.Id
-
 		keys = append(keys, key)
-
 	}
 
 	return keys, total, gerr

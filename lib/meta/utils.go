@@ -1,5 +1,6 @@
 package meta
 
+// ComposeID joins a ksid with a tsid
 func ComposeID(ksid, tsid string) (ksts string) {
 	lid := len(tsid)
 	lksid := len(ksid)
