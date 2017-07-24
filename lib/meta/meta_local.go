@@ -8,13 +8,6 @@ import (
 	index "github.com/uol/mycenae/lib/ts-index"
 )
 
-// Backend defines the behaviour of Meta
-type Backend interface {
-	Handle(ksts *string, pkt *pb.Meta) bool
-	SaveTxtMeta(packet *pb.Meta)
-	CheckTSID(esType, id string) (bool, gobol.Error)
-}
-
 type localMeta struct {
 	index *index.Set
 }

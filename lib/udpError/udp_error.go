@@ -44,9 +44,9 @@ type UDPerror struct {
 	esIndex string
 }
 
-func (error UDPerror) getErrorInfo(keyspace, key string) ([]ErrorInfo, gobol.Error) {
+func (ue UDPerror) getErrorInfo(keyspace, key string) ([]ErrorInfo, gobol.Error) {
 
-	_, found, gerr := error.boltc.GetKeyspace(keyspace)
+	_, found, gerr := ue.boltc.GetKeyspace(keyspace)
 	if gerr != nil {
 		return nil, gerr
 	}
@@ -55,10 +55,10 @@ func (error UDPerror) getErrorInfo(keyspace, key string) ([]ErrorInfo, gobol.Err
 		return nil, errNotFound("GetErrorInfo")
 	}
 
-	return error.persist.GetErrorInfo(fmt.Sprintf("%s%s", key, keyspace))
+	return ue.persist.GetErrorInfo(fmt.Sprintf("%s%s", key, keyspace))
 }
 
-func (error UDPerror) listErrorTags(
+func (ue UDPerror) listErrorTags(
 	keyspace,
 	esType,
 	metric string,
@@ -66,7 +66,7 @@ func (error UDPerror) listErrorTags(
 	size,
 	from int64,
 ) ([]string, int, gobol.Error) {
-	_, found, gerr := error.boltc.GetKeyspace(keyspace)
+	_, found, gerr := ue.boltc.GetKeyspace(keyspace)
 	if gerr != nil {
 		return nil, 0, gerr
 	}
@@ -116,7 +116,7 @@ func (error UDPerror) listErrorTags(
 	}
 
 	var esResp EsResponseTag
-	gerr = error.persist.ListESErrorTags(keyspace, esType, esQuery, &esResp)
+	gerr = ue.persist.ListESErrorTags(keyspace, esType, esQuery, &esResp)
 	total := esResp.Hits.Total
 
 	var keys []string
