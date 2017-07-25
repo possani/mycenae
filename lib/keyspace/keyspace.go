@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"sync"
 
 	"github.com/gocql/gocql"
 	"github.com/pborman/uuid"
@@ -41,7 +42,7 @@ func New(
 		compaction = DefaultCompaction
 	}
 
-	return &Keyspace{
+	keyspace := &Keyspace{
 		persist: persistence{
 			cassandra:     cass,
 			esearch:       es,
@@ -50,13 +51,17 @@ func New(
 			compaction:    compaction,
 		},
 	}
+	return keyspace
 }
 
 type Keyspace struct {
 	persist persistence
+
+	cache map[string]bool
+	sync.Mutex
 }
 
-func (keyspace Keyspace) createKeyspace(ksc Config) (string, gobol.Error) {
+func (keyspace *Keyspace) createKeyspace(ksc Config) (string, gobol.Error) {
 
 	count, gerr := keyspace.persist.countKeyspaceByName(ksc.Name)
 	if gerr != nil {
@@ -120,7 +125,7 @@ func (keyspace Keyspace) createKeyspace(ksc Config) (string, gobol.Error) {
 	return key, nil
 }
 
-func (keyspace Keyspace) updateKeyspace(ksc ConfigUpdate, key string) gobol.Error {
+func (keyspace *Keyspace) updateKeyspace(ksc ConfigUpdate, key string) gobol.Error {
 
 	count, gerr := keyspace.persist.countKeyspaceByKey(key)
 	if gerr != nil {
@@ -152,12 +157,12 @@ func (keyspace Keyspace) updateKeyspace(ksc ConfigUpdate, key string) gobol.Erro
 	return keyspace.persist.updateKeyspace(ksc, key)
 }
 
-func (keyspace Keyspace) listAllKeyspaces() ([]Config, int, gobol.Error) {
+func (keyspace *Keyspace) listAllKeyspaces() ([]Config, int, gobol.Error) {
 	ks, err := keyspace.persist.listAllKeyspaces()
 	return ks, len(ks), err
 }
 
-func (keyspace Keyspace) checkKeyspace(key string) gobol.Error {
+func (keyspace *Keyspace) checkKeyspace(key string) gobol.Error {
 	return keyspace.persist.checkKeyspace(key)
 }
 
@@ -165,18 +170,62 @@ func generateKey() string {
 	return "ts_" + strings.Replace(uuid.New(), "-", "_", 4)
 }
 
-func (keyspace Keyspace) createIndex(esIndex string) gobol.Error {
+func (keyspace *Keyspace) createIndex(esIndex string) gobol.Error {
 	return keyspace.persist.createIndex(esIndex)
 }
 
-func (keyspace Keyspace) deleteIndex(esIndex string) gobol.Error {
+func (keyspace *Keyspace) deleteIndex(esIndex string) gobol.Error {
 	return keyspace.persist.deleteIndex(esIndex)
 }
 
-func (keyspace Keyspace) GetKeyspace(key string) (Config, bool, gobol.Error) {
+func (keyspace *Keyspace) GetKeyspace(key string) (Config, bool, gobol.Error) {
 	return keyspace.persist.getKeyspace(key)
 }
 
-func (keyspace Keyspace) listDatacenters() ([]string, gobol.Error) {
+func (keyspace *Keyspace) getCache(ks string) bool {
+	keyspace.Lock()
+	defer keyspace.Unlock()
+	_, found := keyspace.cache[ks]
+	return found
+}
+
+func (keyspace *Keyspace) setCache(ks string) {
+	keyspace.Lock()
+	defer keyspace.Unlock()
+	keyspace.cache[ks] = true
+}
+
+func (keyspace *Keyspace) warmUpCache() {
+	configs, _, err := keyspace.listAllKeyspaces()
+	if err != nil {
+		return
+	}
+
+	keyspace.Lock()
+	defer keyspace.Unlock()
+
+	for _, config := range configs {
+		keyspace.cache[config.Key] = true
+	}
+}
+
+// KeyspaceExists checks whether a keyspace exists
+func (keyspace *Keyspace) KeyspaceExists(ks string) (bool, gobol.Error) {
+	var err gobol.Error
+	found := keyspace.getCache(ks)
+
+	if !found {
+		_, found, err = keyspace.GetKeyspace(ks)
+		if err != nil {
+			return false, err
+		}
+		if found {
+			keyspace.setCache(ks)
+		}
+	}
+	return found, nil
+}
+
+func (keyspace *Keyspace) listDatacenters() ([]string, gobol.Error) {
 	return keyspace.persist.listDatacenters()
 }

@@ -11,16 +11,9 @@ import (
 	"github.com/uol/mycenae/lib/tsstats"
 )
 
-var (
-	stats *tsstats.StatsTS
-)
-
 //New creates a struct that "caches" timeseries keys. It uses boltdb as persistence
 func New(sts *tsstats.StatsTS, ks *keyspace.Keyspace, path string) (*Bcache, gobol.Error) {
-
-	stats = sts
-
-	persist, gerr := newBolt(path)
+	persist, gerr := newBolt(path, sts)
 	if gerr != nil {
 		return nil, gerr
 	}
@@ -56,13 +49,11 @@ func (bc *Bcache) load() {
 		//bc.tsmap[string(kv.K)] = nil
 		bc.tsmap.Add(string(kv.K), nil)
 	}
-
 }
 
 //GetKeyspace returns a keyspace key, a boolean that tells whether the key was found or not and an error.
 //If the key isn't in boltdb, GetKeyspace tries to fetch the key from cassandra, and if found, puts it in boltdb.
 func (bc *Bcache) GetKeyspace(key string) (string, bool, gobol.Error) {
-
 	bc.ksmtx.Lock()
 	//_, ok := bc.ksmap[key]
 	_, ok := bc.ksmap.Get(key)
@@ -107,27 +98,27 @@ func (bc *Bcache) GetKeyspace(key string) (string, bool, gobol.Error) {
 	return key, true, nil
 }
 
+// GetTsNumber ...
 func (bc *Bcache) GetTsNumber(key string, CheckTSID func(esType, id string) (bool, gobol.Error)) (bool, gobol.Error) {
-
 	return bc.getTSID("meta", "number", key, CheckTSID)
 }
 
+// GetTsText ...
 func (bc *Bcache) GetTsText(key string, CheckTSID func(esType, id string) (bool, gobol.Error)) (bool, gobol.Error) {
 	return bc.getTSID("metatext", "text", key, CheckTSID)
 }
 
+// Get ...
 func (bc *Bcache) Get(key *string) bool {
-
 	bc.tsmtx.Lock()
 	_, ok := bc.tsmap.Get(*key)
 	bc.tsmtx.Unlock()
 
 	return ok
-
 }
 
+// Set ...
 func (bc *Bcache) Set(key string) {
-
 	gerr := bc.persist.Put([]byte("number"), []byte(key), []byte{})
 	if gerr != nil {
 		return
@@ -136,11 +127,9 @@ func (bc *Bcache) Set(key string) {
 	bc.tsmtx.Lock()
 	bc.tsmap.Add(key, nil)
 	bc.tsmtx.Unlock()
-
 }
 
 func (bc *Bcache) getTSID(esType, bucket, key string, CheckTSID func(esType, id string) (bool, gobol.Error)) (bool, gobol.Error) {
-
 	bc.tsmtx.Lock()
 	_, ok := bc.tsmap.Get(key)
 	bc.tsmtx.Unlock()
@@ -158,7 +147,6 @@ func (bc *Bcache) getTSID(esType, bucket, key string, CheckTSID func(esType, id 
 			bc.tsmtx.Lock()
 			bc.tsmap.Add(key, nil)
 			bc.tsmtx.Unlock()
-
 			return
 		}
 
@@ -180,6 +168,5 @@ func (bc *Bcache) getTSID(esType, bucket, key string, CheckTSID func(esType, id 
 		bc.tsmtx.Unlock()
 		return
 	}()
-
 	return false, nil
 }
