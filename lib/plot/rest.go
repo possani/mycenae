@@ -23,7 +23,7 @@ func (plot *Plot) ListPoints(w http.ResponseWriter, r *http.Request, ps httprout
 
 	rip.AddStatsMap(r, map[string]string{"path": "/keyspaces/#keyspace/points", "keyspace": keyspace})
 
-	strTUUID, found, gerr := plot.boltc.GetKeyspace(keyspace)
+	found, gerr := plot.kspace.KeyspaceExists(keyspace)
 	if gerr != nil {
 		rip.Fail(w, gerr)
 		return
@@ -34,14 +34,7 @@ func (plot *Plot) ListPoints(w http.ResponseWriter, r *http.Request, ps httprout
 		return
 	}
 
-	var tuuid bool
-
-	if strTUUID == "true" {
-		tuuid = true
-	}
-
 	query := structs.TsQuery{}
-
 	err := rip.FromJSON(r, &query)
 	if err != nil {
 		rip.Fail(w, gerr)
@@ -49,13 +42,9 @@ func (plot *Plot) ListPoints(w http.ResponseWriter, r *http.Request, ps httprout
 	}
 
 	mts := make(map[string]*Series)
-
 	empty := 0
-
 	for _, k := range query.Keys {
-
 		key := []string{k.TSid}
-
 		opers := structs.DataOperations{
 			Downsample: query.Downsample,
 			Order: []string{
@@ -85,19 +74,14 @@ func (plot *Plot) ListPoints(w http.ResponseWriter, r *http.Request, ps httprout
 		var returnSerie [][]interface{}
 
 		for _, point := range sPoints.Data {
-
 			var pointArray []interface{}
-
 			pointArray = append(pointArray, point.Date*1000)
-
 			if point.Empty {
 				pointArray = append(pointArray, nil)
 			} else {
 				pointArray = append(pointArray, point.Value)
 			}
-
 			returnSerie = append(returnSerie, pointArray)
-
 		}
 
 		s := SeriesType{
@@ -107,24 +91,18 @@ func (plot *Plot) ListPoints(w http.ResponseWriter, r *http.Request, ps httprout
 		}
 
 		series := new(Series)
-
 		series.Points = s
-
 		mts[k.TSid] = series
-
 	}
 
 	for _, k := range query.Text {
-
 		key := []string{k.TSid}
-
 		sPoints, gerr := plot.GetTextSeries(
 			keyspace,
 			key,
 			query.Start,
 			query.End,
 			"",
-			tuuid,
 			true,
 			query.GetRe(),
 			query.Downsample,
@@ -189,7 +167,6 @@ func (plot *Plot) ListPoints(w http.ResponseWriter, r *http.Request, ps httprout
 					query.Start,
 					query.End,
 					ks.Option,
-					tuuid,
 					true,
 					query.GetRe(),
 					query.Downsample,

@@ -4,8 +4,6 @@ import (
 	"github.com/uol/gobol"
 	"github.com/uol/gobol/rubber"
 	"github.com/uol/mycenae/lib/bcache"
-	"github.com/uol/mycenae/lib/tsstats"
-
 	pb "github.com/uol/mycenae/lib/proto"
 	"github.com/uol/mycenae/lib/tsstats"
 	"go.uber.org/zap"
@@ -13,7 +11,7 @@ import (
 
 // Backend defines the behaviour of Meta
 type Backend interface {
-	Handle(ksts *string, pkt *pb.Meta) bool
+	Handle(pkt *pb.Meta) bool
 	SaveTxtMeta(packet *pb.Meta)
 	CheckTSID(esType, id string) (bool, gobol.Error)
 }

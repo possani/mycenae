@@ -18,6 +18,7 @@ import (
 	"github.com/uol/mycenae/lib/cluster"
 	"github.com/uol/mycenae/lib/depot"
 	"github.com/uol/mycenae/lib/gorilla"
+	"github.com/uol/mycenae/lib/keyspace"
 	"github.com/uol/mycenae/lib/limiter"
 	"github.com/uol/mycenae/lib/meta"
 	"github.com/uol/mycenae/lib/structs"
@@ -42,6 +43,7 @@ func New(
 	cass *depot.Cassandra,
 	es *rubber.Elastic,
 	bc *bcache.Bcache,
+	kspace *keyspace.Keyspace,
 	set *structs.Settings,
 	wLimiter *limiter.RateLimite,
 ) (*Collector, error) {
@@ -51,6 +53,7 @@ func New(
 
 	collect := &Collector{
 		boltc:   bc,
+		kspace:  kspace,
 		cluster: cluster,
 		meta:    meta,
 		persist: persistence{
@@ -69,6 +72,7 @@ func New(
 
 type Collector struct {
 	boltc    *bcache.Bcache
+	kspace   *keyspace.Keyspace
 	cluster  *cluster.Cluster
 	meta     *meta.Meta
 	persist  persistence

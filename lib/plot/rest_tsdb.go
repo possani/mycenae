@@ -158,7 +158,7 @@ func (plot *Plot) Query(w http.ResponseWriter, r *http.Request, ps httprouter.Pa
 
 	rip.AddStatsMap(r, map[string]string{"path": "/keyspaces/#keyspace/api/query", "keyspace": keyspace})
 
-	_, found, gerr := plot.boltc.GetKeyspace(keyspace)
+	found, gerr := plot.kspace.KeyspaceExists(keyspace)
 	if gerr != nil {
 		rip.Fail(w, gerr)
 		return

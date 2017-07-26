@@ -9,7 +9,7 @@ import (
 	"github.com/uol/gobol"
 	"github.com/uol/gobol/rubber"
 
-	"github.com/uol/mycenae/lib/bcache"
+	"github.com/uol/mycenae/lib/keyspace"
 	"github.com/uol/mycenae/lib/tsstats"
 )
 
@@ -22,7 +22,7 @@ func New(
 	gbl *zap.Logger,
 	sts *tsstats.StatsTS,
 	cass *gocql.Session,
-	bc *bcache.Bcache,
+	kspace *keyspace.Keyspace,
 	es *rubber.Elastic,
 	esIndex string,
 	consistencies []gocql.Consistency,
@@ -33,20 +33,19 @@ func New(
 
 	return &UDPerror{
 		persist: persistence{cassandra: cass, esearch: es, consistencies: consistencies},
-		boltc:   bc,
+		kspace:  kspace,
 		esIndex: esIndex,
 	}
 }
 
 type UDPerror struct {
 	persist persistence
-	boltc   *bcache.Bcache
+	kspace  *keyspace.Keyspace
 	esIndex string
 }
 
 func (ue UDPerror) getErrorInfo(keyspace, key string) ([]ErrorInfo, gobol.Error) {
-
-	_, found, gerr := ue.boltc.GetKeyspace(keyspace)
+	found, gerr := ue.kspace.KeyspaceExists(keyspace)
 	if gerr != nil {
 		return nil, gerr
 	}
@@ -66,7 +65,7 @@ func (ue UDPerror) listErrorTags(
 	size,
 	from int64,
 ) ([]string, int, gobol.Error) {
-	_, found, gerr := ue.boltc.GetKeyspace(keyspace)
+	found, gerr := ue.kspace.KeyspaceExists(keyspace)
 	if gerr != nil {
 		return nil, 0, gerr
 	}

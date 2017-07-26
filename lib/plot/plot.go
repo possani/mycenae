@@ -4,9 +4,9 @@ import (
 	"github.com/uol/gobol"
 	"github.com/uol/gobol/rubber"
 
-	"github.com/uol/mycenae/lib/bcache"
 	"github.com/uol/mycenae/lib/cluster"
 	"github.com/uol/mycenae/lib/depot"
+	"github.com/uol/mycenae/lib/keyspace"
 	"github.com/uol/mycenae/lib/tsstats"
 
 	"go.uber.org/zap"
@@ -23,7 +23,7 @@ func New(
 	cluster *cluster.Cluster,
 	es *rubber.Elastic,
 	cass *depot.Cassandra,
-	bc *bcache.Bcache,
+	kspace *keyspace.Keyspace,
 	esIndex string,
 	maxTimeseries int,
 	maxConcurrentTimeseries int,
@@ -54,7 +54,7 @@ func New(
 		esIndex:           esIndex,
 		MaxTimeseries:     maxTimeseries,
 		LogQueryThreshold: logQueryTSthreshold,
-		boltc:             bc,
+		kspace:            kspace,
 		persist:           persistence{cluster: cluster, esTs: es, cass: cass},
 		concTimeseries:    make(chan struct{}, maxConcurrentTimeseries),
 		concReads:         make(chan struct{}, maxConcurrentReads),
@@ -65,7 +65,7 @@ type Plot struct {
 	esIndex           string
 	MaxTimeseries     int
 	LogQueryThreshold int
-	boltc             *bcache.Bcache
+	kspace            *keyspace.Keyspace
 	persist           persistence
 	concTimeseries    chan struct{}
 	concReads         chan struct{}

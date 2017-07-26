@@ -83,7 +83,7 @@ func (collector *Collector) makePoint(point *pb.TSPoint, meta *pb.Meta, rcvMsg *
 	}
 	meta.Tags = tags
 
-	_, found, gerr := collector.boltc.GetKeyspace(ksid)
+	found, gerr := collector.kspace.KeyspaceExists(ksid)
 	if !found {
 		return errValidation(`Keyspace not found`)
 	}
@@ -181,7 +181,7 @@ func (collector *Collector) makePacket(packet *gorilla.Point, rcvMsg gorilla.TSD
 		}
 	}
 
-	_, found, gerr := collector.boltc.GetKeyspace(packet.KsID)
+	found, gerr := collector.kspace.KeyspaceExists(packet.KsID)
 	if !found {
 		return errValidation(`Keyspace not found`)
 	}

@@ -19,7 +19,7 @@ func NewLocal() Backend {
 	}
 }
 
-func (m *localMeta) Handle(ksts *string, pkt *pb.Meta) bool {
+func (m *localMeta) Handle(pkt *pb.Meta) bool {
 	found, err := m.index.Get(pkt.GetKsid(), "meta").Exists(index.ParseID(pkt.GetTsid()))
 	return (err != nil || !found)
 }

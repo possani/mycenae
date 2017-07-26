@@ -15,6 +15,7 @@ import (
 	"github.com/uol/gobol/rubber"
 	"github.com/uol/mycenae/lib/bcache"
 	"github.com/uol/mycenae/lib/tsstats"
+	"github.com/uol/mycenae/lib/utils"
 
 	pb "github.com/uol/mycenae/lib/proto"
 
@@ -50,23 +51,23 @@ type savingObj struct {
 	mtx sync.RWMutex
 }
 
-func (so *savingObj) get(key *string) (*pb.Meta, bool) {
+func (so *savingObj) get(key string) (*pb.Meta, bool) {
 	so.mtx.RLock()
 	defer so.mtx.RUnlock()
-	v, ok := so.mm[*key]
+	v, ok := so.mm[key]
 	return v, ok
 }
 
-func (so *savingObj) add(key *string, m *pb.Meta) {
+func (so *savingObj) add(key string, m *pb.Meta) {
 	so.mtx.Lock()
 	defer so.mtx.Unlock()
-	so.mm[*key] = nil
+	so.mm[key] = nil
 }
 
-func (so *savingObj) del(key *string) {
+func (so *savingObj) del(key string) {
 	so.mtx.Lock()
 	defer so.mtx.Unlock()
-	delete(so.mm, *key)
+	delete(so.mm, key)
 }
 
 func (so *savingObj) iter() <-chan string {
@@ -158,7 +159,7 @@ func (meta *elasticMeta) metaCoordinator(saveInterval time.Duration, headInterva
 						continue
 					}
 					if !found {
-						if pkt, ok := meta.sm.get(&ksts); ok {
+						if pkt, ok := meta.sm.get(ksts); ok {
 							meta.metaPntChan <- pkt
 							time.Sleep(headInterval)
 							continue
@@ -166,7 +167,7 @@ func (meta *elasticMeta) metaCoordinator(saveInterval time.Duration, headInterva
 					}
 					time.Sleep(headInterval)
 					meta.boltc.Set(ksts)
-					meta.sm.del(&ksts)
+					meta.sm.del(ksts)
 
 				}
 			}
@@ -261,26 +262,28 @@ func (meta *elasticMeta) readMeta(bulk *bytes.Buffer) error {
 	return nil
 }
 
-func (meta *elasticMeta) Handle(ksts *string, pkt *pb.Meta) bool {
+func (meta *elasticMeta) Handle(pkt *pb.Meta) bool {
+	ksts := utils.KSTS(pkt.GetKsid(), pkt.GetTsid())
 	if meta.boltc.Get(ksts) {
 		return true
 	}
 
-	if _, ok := meta.sm.get(ksts); !ok {
+	if _, ok := meta.sm.get(string(ksts)); !ok {
 		gblog.Debug(
 			"adding point in save map",
 			zap.String("package", "meta"),
 			zap.String("func", "Handle"),
-			zap.String("ksts", *ksts),
+			zap.String("ksts", string(ksts)),
 		)
-		meta.sm.add(ksts, pkt)
+		meta.sm.add(string(ksts), pkt)
 		meta.metaPntChan <- pkt
 	}
 	return false
 }
 
 func (meta *elasticMeta) SaveTxtMeta(packet *pb.Meta) {
-	ksts := ComposeID(packet.GetKsid(), packet.GetTsid())
+	ksts := utils.KSTS(packet.GetKsid(), packet.GetTsid())
+
 	if len(meta.metaTxtChan) >= meta.settings.MetaBufferSize {
 		gblog.Warn(
 			fmt.Sprintf("discarding point: %v", packet),
@@ -290,7 +293,7 @@ func (meta *elasticMeta) SaveTxtMeta(packet *pb.Meta) {
 		statsLostMeta()
 		return
 	}
-	found, gerr := meta.boltc.GetTsText(ksts, meta.CheckTSID)
+	found, gerr := meta.boltc.GetTsText(string(ksts), meta.CheckTSID)
 	if gerr != nil {
 		gblog.Error(
 			gerr.Error(),

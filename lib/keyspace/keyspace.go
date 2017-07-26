@@ -17,13 +17,13 @@ import (
 var (
 	maxTTL   int
 	validKey *regexp.Regexp
-	stats    *tsstats.StatsTS
 )
 
 // DefaultCompaction defines the default compaction strategy that cassandra
 // will use for timeseries data
 const DefaultCompaction = "org.apache.cassandra.db.compaction.TimeWindowCompactionStrategy"
 
+// New creates a keyspace storage
 func New(
 	sts *tsstats.StatsTS,
 	cass *gocql.Session,
@@ -36,7 +36,6 @@ func New(
 
 	maxTTL = mTTL
 	validKey = regexp.MustCompile(`^[0-9A-Za-z][0-9A-Za-z_]+$`)
-	stats = sts
 
 	if compaction == "" {
 		compaction = DefaultCompaction
@@ -51,9 +50,12 @@ func New(
 			compaction:    compaction,
 		},
 	}
+
+	go keyspace.warmUpCache()
 	return keyspace
 }
 
+// Keyspace is the manager for the keyspace creation
 type Keyspace struct {
 	persist persistence
 
@@ -178,6 +180,7 @@ func (keyspace *Keyspace) deleteIndex(esIndex string) gobol.Error {
 	return keyspace.persist.deleteIndex(esIndex)
 }
 
+// GetKeyspace returns the configuration of a keyspace
 func (keyspace *Keyspace) GetKeyspace(key string) (Config, bool, gobol.Error) {
 	return keyspace.persist.getKeyspace(key)
 }

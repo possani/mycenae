@@ -139,7 +139,7 @@ func main() {
 		tsLogger.Fatal(err.Error())
 	}
 
-	coll, err := collector.New(tsLogger, tssts, cluster, meta, d, es, bc, settings, limiter)
+	coll, err := collector.New(tsLogger, tssts, cluster, meta, d, es, bc, ks, settings, limiter)
 	if err != nil {
 		tsLogger.Fatal(err.Error())
 	}
@@ -158,7 +158,7 @@ func main() {
 		cluster,
 		es,
 		d,
-		bc,
+		ks,
 		settings.ElasticSearch.Index,
 		settings.MaxTimeseries,
 		settings.MaxConcurrentTimeseries,
@@ -173,7 +173,7 @@ func main() {
 		tsLogger,
 		tssts,
 		d.Session,
-		bc,
+		ks,
 		es,
 		settings.ElasticSearch.Index,
 		rcs,

@@ -53,7 +53,7 @@ func (bc *Bcache) load() {
 
 //GetKeyspace returns a keyspace key, a boolean that tells whether the key was found or not and an error.
 //If the key isn't in boltdb, GetKeyspace tries to fetch the key from cassandra, and if found, puts it in boltdb.
-func (bc *Bcache) GetKeyspace(key string) (string, bool, gobol.Error) {
+func (bc *Bcache) GetKeyspace_(key string) (string, bool, gobol.Error) {
 	bc.ksmtx.Lock()
 	//_, ok := bc.ksmap[key]
 	_, ok := bc.ksmap.Get(key)
@@ -108,6 +108,7 @@ func (bc *Bcache) GetTsText(key string, CheckTSID func(esType, id string) (bool,
 	return bc.getTSID("metatext", "text", key, CheckTSID)
 }
 
+// Get ...
 func (bc *Bcache) Get(ksts []byte) bool {
 
 	bc.tsmtx.Lock()
