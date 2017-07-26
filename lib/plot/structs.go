@@ -837,11 +837,11 @@ func (r TSDBresponses) Less(i, j int) bool {
 
 	keys := []string{}
 
-	for k, _ := range r[i].Tags {
+	for k := range r[i].Tags {
 		keys = append(keys, k)
 	}
 
-	for kj, _ := range r[j].Tags {
+	for kj := range r[j].Tags {
 
 		add := true
 
