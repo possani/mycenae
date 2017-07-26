@@ -637,7 +637,9 @@ func (wal *WAL) Load() <-chan []pb.TSPoint {
 					if p.GetDate() > 0 {
 						ksts := string(utils.KSTS(p.GetKsid(), p.GetTsid()))
 
+						wal.tt.mtx.RLock()
 						v, ok := tt[ksts]
+						wal.tt.mtx.RUnlock()
 						if !ok {
 							rp[index] = p
 							index++
