@@ -1,7 +1,6 @@
 package bcache
 
 import (
-	"net/http"
 	"sync"
 
 	"github.com/uol/gobol"
@@ -51,64 +50,17 @@ func (bc *Bcache) load() {
 	}
 }
 
-//GetKeyspace returns a keyspace key, a boolean that tells whether the key was found or not and an error.
-//If the key isn't in boltdb, GetKeyspace tries to fetch the key from cassandra, and if found, puts it in boltdb.
-func (bc *Bcache) GetKeyspace_(key string) (string, bool, gobol.Error) {
-	bc.ksmtx.Lock()
-	//_, ok := bc.ksmap[key]
-	_, ok := bc.ksmap.Get(key)
-	bc.ksmtx.Unlock()
-
-	if ok {
-		return string(key), true, nil
-	}
-
-	v, gerr := bc.persist.Get([]byte("keyspace"), []byte(key))
-	if gerr != nil {
-		return "", false, gerr
-	}
-	if v != nil {
-		bc.ksmtx.Lock()
-		bc.ksmap.Add(key, nil)
-		bc.ksmtx.Unlock()
-
-		return key, true, nil
-	}
-
-	_, found, gerr := bc.kspace.GetKeyspace(key)
-	if gerr != nil {
-		if gerr.StatusCode() == http.StatusNotFound {
-			return "", false, nil
-		}
-		return "", false, gerr
-	}
-	if !found {
-		return "", false, nil
-	}
-
-	gerr = bc.persist.Put([]byte("keyspace"), []byte(key), []byte("false"))
-	if gerr != nil {
-		return "", false, gerr
-	}
-
-	bc.ksmtx.Lock()
-	bc.ksmap.Add(key, nil)
-	bc.ksmtx.Unlock()
-
-	return key, true, nil
-}
-
-// GetTsNumber ...
+// GetTsNumber checks if a numeric timeseries is cached
 func (bc *Bcache) GetTsNumber(key string, CheckTSID func(esType, id string) (bool, gobol.Error)) (bool, gobol.Error) {
 	return bc.getTSID("meta", "number", key, CheckTSID)
 }
 
-// GetTsText ...
+// GetTsText checks if a text timeseries is cached
 func (bc *Bcache) GetTsText(key string, CheckTSID func(esType, id string) (bool, gobol.Error)) (bool, gobol.Error) {
 	return bc.getTSID("metatext", "text", key, CheckTSID)
 }
 
-// Get ...
+// Get checks the LRU cache
 func (bc *Bcache) Get(ksts []byte) bool {
 
 	bc.tsmtx.Lock()
@@ -118,7 +70,7 @@ func (bc *Bcache) Get(ksts []byte) bool {
 	return ok
 }
 
-// Set ...
+// Set sets the LRU cache
 func (bc *Bcache) Set(key string) {
 	gerr := bc.persist.Put([]byte("number"), []byte(key), []byte{})
 	if gerr != nil {

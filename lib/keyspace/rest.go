@@ -7,7 +7,7 @@ import (
 	"github.com/uol/gobol/rip"
 )
 
-// Create ...
+// Create is the ReST endpoint that creates keyspaces
 func (kspace *Keyspace) Create(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	ks := ps.ByName("keyspace")
 	if ks == "" {
@@ -49,7 +49,7 @@ func (kspace *Keyspace) Create(w http.ResponseWriter, r *http.Request, ps httpro
 	return
 }
 
-// Update ...
+// Update is the ReST endpoint that updates keyspaces
 func (kspace *Keyspace) Update(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	ks := ps.ByName("keyspace")
@@ -81,7 +81,7 @@ func (kspace *Keyspace) Update(w http.ResponseWriter, r *http.Request, ps httpro
 	return
 }
 
-// GetAll ...
+// GetAll is the ReST endpoint that lists all keyspaces
 func (kspace *Keyspace) GetAll(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	keyspaces, total, gerr := kspace.listAllKeyspaces()
@@ -104,7 +104,7 @@ func (kspace *Keyspace) GetAll(w http.ResponseWriter, r *http.Request, ps httpro
 	return
 }
 
-// Check ...
+// Check  is the ReST endpoint that checks if a keyspace exists
 func (kspace *Keyspace) Check(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	ks := ps.ByName("keyspace")
@@ -120,14 +120,12 @@ func (kspace *Keyspace) Check(w http.ResponseWriter, r *http.Request, ps httprou
 		rip.Fail(w, gerr)
 		return
 	}
-
 	rip.AddStatsMap(r, map[string]string{"path": "/keyspaces/#keyspace", "keyspace": ks})
-
 	rip.Success(w, http.StatusOK, nil)
 	return
 }
 
-// ListDC ...
+// ListDC is the ReST endpoint that list datacenters
 func (kspace *Keyspace) ListDC(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	datacenters, gerr := kspace.listDatacenters()
 	if gerr != nil {
