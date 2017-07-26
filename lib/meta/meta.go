@@ -4,6 +4,8 @@ import (
 	"github.com/uol/gobol"
 	"github.com/uol/gobol/rubber"
 	"github.com/uol/mycenae/lib/bcache"
+	"github.com/uol/mycenae/lib/tsstats"
+
 	pb "github.com/uol/mycenae/lib/proto"
 	"github.com/uol/mycenae/lib/tsstats"
 	"go.uber.org/zap"
