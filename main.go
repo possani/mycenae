@@ -13,13 +13,10 @@ import (
 	"syscall"
 
 	"github.com/gocql/gocql"
-	"go.uber.org/zap"
-
 	"github.com/uol/gobol/loader"
 	"github.com/uol/gobol/rubber"
 	"github.com/uol/gobol/saw"
 	"github.com/uol/gobol/snitch"
-
 	"github.com/uol/mycenae/lib/bcache"
 	"github.com/uol/mycenae/lib/cluster"
 	"github.com/uol/mycenae/lib/collector"
@@ -35,19 +32,17 @@ import (
 	"github.com/uol/mycenae/lib/udp"
 	"github.com/uol/mycenae/lib/udpError"
 	"github.com/uol/mycenae/lib/wal"
+	"go.uber.org/zap"
 )
 
 func main() {
-
 	//Parse of command line arguments.
 	var confPath string
-
 	flag.StringVar(&confPath, "config", "config.toml", "path to configuration file")
 	flag.Parse()
 
 	//Load conf file.
-	settings := new(structs.Settings)
-
+	var settings structs.Settings
 	err := loader.ConfToml(confPath, &settings)
 	if err != nil {
 		log.Fatal("ERROR - Loading Config file: ", err)
@@ -57,10 +52,7 @@ func main() {
 	if err != nil {
 		log.Fatal("ERROR - Starting logger: ", err)
 	}
-
-	go func() {
-		log.Println(http.ListenAndServe("0.0.0.0:6666", nil))
-	}()
+	go log.Println(http.ListenAndServe("0.0.0.0:6666", nil))
 
 	sts, err := snitch.New(tsLogger, settings.Stats)
 	if err != nil {
@@ -139,7 +131,7 @@ func main() {
 		tsLogger.Fatal(err.Error())
 	}
 
-	coll, err := collector.New(tsLogger, tssts, cluster, meta, d, es, bc, ks, settings, limiter)
+	coll, err := collector.New(tsLogger, tssts, cluster, meta, d, es, bc, ks, &settings, limiter)
 	if err != nil {
 		tsLogger.Fatal(err.Error())
 	}
@@ -148,7 +140,6 @@ func main() {
 	uV2server.Start()
 
 	collectorV1 := collector.UDPv1{}
-
 	uV1server := udp.New(tsLogger, settings.UDPserver, collectorV1)
 	uV1server.Start()
 
@@ -192,42 +183,34 @@ func main() {
 	)
 	tsRest.Start()
 
-	signalChannel := make(chan os.Signal, 1)
-
-	signal.Notify(signalChannel, os.Interrupt, syscall.SIGTERM, syscall.SIGHUP)
-
 	tsLogger.Info("Mycenae started successfully")
-
 	go func() {
-
-		tsLogger := tsLogger.With(
+		logger := tsLogger.With(
 			zap.String("func", "main"),
 			zap.String("package", "main"),
 		)
-
 		for pts := range wal.Load() {
 			if len(pts) > 0 {
-				tsLogger.Debug(
+				logger.Debug(
 					"loading points from commitlog",
 					zap.Int("count", len(pts)),
 				)
 			}
-
 			for _, p := range pts {
 				err := cluster.WAL(&p)
 				if err != nil {
-					tsLogger.Error(
+					logger.Error(
 						"failure loading point from write-ahead-log",
 						zap.Error(err),
 					)
 				}
 			}
 		}
-
-		tsLogger.Debug("finished loading points from commitlog")
-
+		logger.Debug("finished loading points from commitlog")
 	}()
 
+	signalChannel := make(chan os.Signal, 1)
+	signal.Notify(signalChannel, os.Interrupt, syscall.SIGTERM, syscall.SIGHUP)
 	for {
 		sig := <-signalChannel
 		switch sig {
@@ -236,14 +219,20 @@ func main() {
 			return
 		case syscall.SIGHUP:
 			//THIS IS A HACK DO NOT EXTEND IT. THE FEATURE IS NICE BUT NEEDS TO BE DONE CORRECTLY!!!!!
-			settings := new(structs.Settings)
-			var err error
+			var (
+				settings structs.Settings
+				err      error
+			)
 
 			if strings.HasSuffix(confPath, ".json") {
 				err = loader.ConfJson(confPath, &settings)
 			} else if strings.HasSuffix(confPath, ".toml") {
 				err = loader.ConfToml(confPath, &settings)
+			} else {
+				tsLogger.Error("Unknown file extension")
+				continue
 			}
+
 			if err != nil {
 				tsLogger.Error("ERROR - Loading Config file: ", zap.Error(err))
 				continue
@@ -264,30 +253,23 @@ func main() {
 			}
 
 			d.SetWriteConsistencies(wcs)
-
 			d.SetReadConsistencies(rcs)
-
 			tsLogger.Info("New consistency set")
-
 		}
 	}
 }
 
 func parseConsistencies(names []string) ([]gocql.Consistency, error) {
-
 	if len(names) == 0 {
 		return nil, errors.New("consistency array cannot be empty")
 	}
-
 	if len(names) > 3 {
 		return nil, errors.New("consistency array too big")
 	}
 
 	tmp := make([]gocql.Consistency, len(names))
 	for i, cons := range names {
-		cons = strings.ToLower(cons)
-
-		switch cons {
+		switch strings.ToLower(cons) {
 		case "one":
 			tmp[i] = gocql.One
 		case "quorum":
@@ -301,13 +283,7 @@ func parseConsistencies(names []string) ([]gocql.Consistency, error) {
 	return tmp, nil
 }
 
-func stop(
-	logger *zap.Logger,
-	rest *rest.REST,
-	collector *collector.Collector,
-	strg *gorilla.Storage,
-) {
-
+func stop(logger *zap.Logger, rest *rest.REST, collector *collector.Collector, strg *gorilla.Storage) {
 	logger.Info("Stopping REST")
 	rest.Stop()
 
@@ -316,5 +292,4 @@ func stop(
 
 	logger.Info("Stopping storage")
 	strg.Stop()
-
 }
