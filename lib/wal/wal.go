@@ -545,7 +545,7 @@ func (wal *WAL) Load() <-chan []pb.TSPoint {
 			)
 		}
 
-		log.Sugar().Debug("transaction table loaded: ", tt)
+		//log.Sugar().Debug("transaction table loaded: ", tt)
 		wal.tt.mtx.Lock()
 		wal.tt.table = tt
 		wal.tt.mtx.Unlock()
@@ -558,6 +558,7 @@ func (wal *WAL) Load() <-chan []pb.TSPoint {
 			)
 		}
 
+		log.Debug("files to load", zap.Strings("list", names))
 		fCount := len(names) - 1
 
 		var fileData []byte
@@ -637,16 +638,7 @@ func (wal *WAL) Load() <-chan []pb.TSPoint {
 					if p.GetDate() > 0 {
 						ksts := string(utils.KSTS(p.GetKsid(), p.GetTsid()))
 
-						wal.tt.mtx.RLock()
-						v, ok := tt[ksts]
-						wal.tt.mtx.RUnlock()
-						if !ok {
-							rp[index] = p
-							index++
-							continue
-						}
-
-						if utils.BlockID(p.GetDate()) > v {
+						if utils.BlockID(p.GetDate()) > tt[ksts] {
 							rp[index] = p
 							index++
 						}
@@ -658,7 +650,6 @@ func (wal *WAL) Load() <-chan []pb.TSPoint {
 				ptsChan <- rp[:index]
 
 				wal.give <- rp
-
 			}
 			fCount--
 			if fCount < 0 {
