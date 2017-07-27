@@ -545,6 +545,11 @@ func (wal *WAL) Load() <-chan []pb.TSPoint {
 			)
 		}
 
+		//log.Sugar().Debug("transaction table loaded: ", tt)
+		wal.tt.mtx.Lock()
+		wal.tt.table = tt
+		wal.tt.mtx.Unlock()
+
 		names, err := wal.listFiles()
 		if err != nil {
 			log.Panic(
@@ -553,6 +558,7 @@ func (wal *WAL) Load() <-chan []pb.TSPoint {
 			)
 		}
 
+		log.Debug("files to load", zap.Strings("list", names))
 		fCount := len(names) - 1
 
 		var fileData []byte
@@ -644,7 +650,6 @@ func (wal *WAL) Load() <-chan []pb.TSPoint {
 				ptsChan <- rp[:index]
 
 				wal.give <- rp
-
 			}
 			fCount--
 			if fCount < 0 {
