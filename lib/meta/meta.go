@@ -14,6 +14,8 @@ type Backend interface {
 	Handle(pkt *pb.Meta) bool
 	SaveTxtMeta(packet *pb.Meta)
 	CheckTSID(esType, id string) (bool, gobol.Error)
+
+	CreateIndex(index string) gobol.Error
 }
 
 // Meta is a wrapper around the meta backend

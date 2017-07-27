@@ -106,6 +106,16 @@ func main() {
 		tsLogger.Fatal("ERROR - Connecting to elasticsearch: ", zap.Error(err))
 	}
 
+	bc, err := bcache.New(tssts, settings.BoltPath)
+	if err != nil {
+		tsLogger.Fatal("", zap.Error(err))
+	}
+
+	meta, err := meta.New(tsLogger, tssts, es, bc, settings.Meta)
+	if err != nil {
+		tsLogger.Fatal("", zap.Error(err))
+	}
+
 	ks := keyspace.New(
 		tssts,
 		d.Session,
@@ -116,18 +126,8 @@ func main() {
 		settings.TTL.Max,
 	)
 
-	bc, err := bcache.New(tssts, ks, settings.BoltPath)
-	if err != nil {
-		tsLogger.Fatal("", zap.Error(err))
-	}
-
 	strg := gorilla.New(tsLogger, tssts, d, wal)
 	strg.Start()
-
-	meta, err := meta.New(tsLogger, tssts, es, bc, settings.Meta)
-	if err != nil {
-		tsLogger.Fatal("", zap.Error(err))
-	}
 
 	cluster, err := cluster.New(tsLogger, strg, meta, settings.Cluster)
 	if err != nil {

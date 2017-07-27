@@ -7,20 +7,22 @@ import (
 
 	"github.com/uol/gobol"
 	"github.com/uol/gobol/rubber"
+	"github.com/uol/mycenae/lib/tsstats"
 )
 
 type persistence struct {
 	esearch *rubber.Elastic
+	stats   *tsstats.StatsTS
 }
 
 func (persist *persistence) HeadMetaFromES(esindex, eType, id string) (bool, gobol.Error) {
 	start := time.Now()
 	respCode, err := persist.esearch.GetHead(esindex, eType, id)
 	if err != nil {
-		statsIndexError(esindex, eType, "head")
+		statsIndexError(persist.stats, esindex, eType, "head")
 		return false, errPersist("HeadMetaFromES", err)
 	}
-	statsIndex(esindex, eType, "head", time.Since(start))
+	statsIndex(persist.stats, esindex, eType, "head", time.Since(start))
 	return respCode == http.StatusOK, nil
 }
 
@@ -28,9 +30,9 @@ func (persist *persistence) SaveBulkES(body io.Reader) gobol.Error {
 	start := time.Now()
 	_, err := persist.esearch.PostBulk(body)
 	if err != nil {
-		statsIndexError("", "", "bulk")
+		statsIndexError(persist.stats, "", "", "bulk")
 		return errPersist("SaveBulkES", err)
 	}
-	statsIndex("", "", "bulk", time.Since(start))
+	statsIndex(persist.stats, "", "", "bulk", time.Since(start))
 	return nil
 }

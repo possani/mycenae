@@ -22,16 +22,13 @@ import (
 	"go.uber.org/zap"
 )
 
-var (
-	gblog *zap.Logger
-	stats *tsstats.StatsTS
-)
-
 type elasticMeta struct {
 	boltc    *bcache.Bcache
 	validKey *regexp.Regexp
 	settings *Settings
 	persist  persistence
+	stats    *tsstats.StatsTS
+	logger   *zap.Logger
 
 	concBulk    chan struct{}
 	metaPntChan chan *pb.Meta
@@ -111,9 +108,6 @@ func createElasticMeta(
 		return nil, err
 	}
 
-	gblog = log
-	stats = sts
-
 	m := &elasticMeta{
 		boltc:       bc,
 		settings:    set,
@@ -124,11 +118,14 @@ func createElasticMeta(
 		metaPayload: bytes.NewBuffer(nil),
 		persist: persistence{
 			esearch: es,
+			stats:   sts,
 		},
-		sm: &savingObj{mm: make(map[string]*pb.Meta)},
+		stats:  sts,
+		logger: log,
+		sm:     &savingObj{mm: make(map[string]*pb.Meta)},
 	}
 
-	gblog.Debug(
+	m.logger.Debug(
 		"meta initialized",
 		zap.String("MetaSaveInterval", set.MetaSaveInterval),
 		zap.Int("MaxConcurrentBulks", set.MaxConcurrentBulks),
@@ -152,7 +149,7 @@ func (meta *elasticMeta) metaCoordinator(saveInterval time.Duration, headInterva
 					//found, gerr := meta.boltc.GetTsNumber(ksts, meta.CheckTSID)
 					found, gerr := meta.CheckTSID("meta", ksts)
 					if gerr != nil {
-						gblog.Error(
+						meta.logger.Error(
 							gerr.Error(),
 							zap.String("func", "metaCoordinator/SaveBulkES"),
 						)
@@ -184,7 +181,7 @@ func (meta *elasticMeta) metaCoordinator(saveInterval time.Duration, headInterva
 				bulk := bytes.NewBuffer(nil)
 				err := meta.readMeta(bulk)
 				if err != nil {
-					gblog.Error(
+					meta.logger.Error(
 						"",
 						zap.String("func", "metaCoordinator"),
 						zap.Error(err),
@@ -196,7 +193,7 @@ func (meta *elasticMeta) metaCoordinator(saveInterval time.Duration, headInterva
 		case p := <-meta.metaPntChan:
 			gerr := meta.generateBulk(p, true)
 			if gerr != nil {
-				gblog.Error(
+				meta.logger.Error(
 					gerr.Error(),
 					zap.String("func", "metaCoordinator/SaveBulkES"),
 				)
@@ -207,7 +204,7 @@ func (meta *elasticMeta) metaCoordinator(saveInterval time.Duration, headInterva
 				bulk := bytes.NewBuffer(nil)
 				err := meta.readMeta(bulk)
 				if err != nil {
-					gblog.Error(
+					meta.logger.Error(
 						"",
 						zap.String("func", "metaCoordinator"),
 						zap.Error(err),
@@ -219,7 +216,7 @@ func (meta *elasticMeta) metaCoordinator(saveInterval time.Duration, headInterva
 		case p := <-meta.metaTxtChan:
 			gerr := meta.generateBulk(p, false)
 			if gerr != nil {
-				gblog.Error(
+				meta.logger.Error(
 					gerr.Error(),
 					zap.String("func", "metaCoordinator/SaveBulkES"),
 				)
@@ -229,7 +226,7 @@ func (meta *elasticMeta) metaCoordinator(saveInterval time.Duration, headInterva
 				bulk := bytes.NewBuffer(nil)
 				err := meta.readMeta(bulk)
 				if err != nil {
-					gblog.Error(
+					meta.logger.Error(
 						"",
 						zap.String("func", "metaCoordinator"),
 						zap.Error(err),
@@ -269,7 +266,7 @@ func (meta *elasticMeta) Handle(pkt *pb.Meta) bool {
 	}
 
 	if _, ok := meta.sm.get(string(ksts)); !ok {
-		gblog.Debug(
+		meta.logger.Debug(
 			"adding point in save map",
 			zap.String("package", "meta"),
 			zap.String("func", "Handle"),
@@ -285,17 +282,17 @@ func (meta *elasticMeta) SaveTxtMeta(packet *pb.Meta) {
 	ksts := utils.KSTS(packet.GetKsid(), packet.GetTsid())
 
 	if len(meta.metaTxtChan) >= meta.settings.MetaBufferSize {
-		gblog.Warn(
+		meta.logger.Warn(
 			fmt.Sprintf("discarding point: %v", packet),
 			zap.String("package", "meta"),
 			zap.String("func", "SaveMeta"),
 		)
-		statsLostMeta()
+		statsLostMeta(meta.stats)
 		return
 	}
 	found, gerr := meta.boltc.GetTsText(string(ksts), meta.CheckTSID)
 	if gerr != nil {
-		gblog.Error(
+		meta.logger.Error(
 			gerr.Error(),
 			zap.String("func", "saveMeta"),
 			zap.Error(gerr),
@@ -306,7 +303,7 @@ func (meta *elasticMeta) SaveTxtMeta(packet *pb.Meta) {
 
 	if !found {
 		meta.metaTxtChan <- packet
-		statsBulkPoints()
+		statsBulkPoints(meta.stats)
 	}
 }
 
@@ -446,7 +443,7 @@ func (meta *elasticMeta) generateBulk(packet *pb.Meta, number bool) gobol.Error 
 func (meta *elasticMeta) saveBulk(boby io.Reader) {
 	gerr := meta.persist.SaveBulkES(boby)
 	if gerr != nil {
-		gblog.Error(
+		meta.logger.Error(
 			gerr.Error(),
 			zap.String("func", "metaCoordinator/SaveBulkES"),
 		)
@@ -457,4 +454,17 @@ func (meta *elasticMeta) saveBulk(boby io.Reader) {
 func (meta *elasticMeta) CheckTSID(esType, id string) (bool, gobol.Error) {
 	info := strings.Split(id, "|")
 	return meta.persist.HeadMetaFromES(info[0], esType, info[1])
+}
+
+func (meta *elasticMeta) CreateIndex(index string) gobol.Error {
+	start := time.Now()
+	body := bytes.NewBuffer(nil)
+	body.WriteString(`{"mappings":{"meta":{"properties":{"tagsNested":{"type":"nested","properties":{"tagKey":{"type":"string"},"tagValue":{"type":"string"}}}}},"metatext":{"properties":{"tagsNested":{"type":"nested","properties":{"tagKey":{"type":"string"},"tagValue":{"type":"string"}}}}}}}`)
+	_, err := meta.persist.esearch.CreateIndex(index, body)
+	if err != nil {
+		statsIndexError(meta.stats, index, "", "post")
+		return errPersist("CreateIndex", err)
+	}
+	statsIndex(meta.stats, index, "", "post", time.Since(start))
+	return nil
 }

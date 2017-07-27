@@ -6,19 +6,17 @@ import (
 	"github.com/uol/gobol"
 
 	lru "github.com/golang/groupcache/lru"
-	"github.com/uol/mycenae/lib/keyspace"
 	"github.com/uol/mycenae/lib/tsstats"
 )
 
 //New creates a struct that "caches" timeseries keys. It uses boltdb as persistence
-func New(sts *tsstats.StatsTS, ks *keyspace.Keyspace, path string) (*Bcache, gobol.Error) {
+func New(sts *tsstats.StatsTS, path string) (*Bcache, gobol.Error) {
 	persist, gerr := newBolt(path, sts)
 	if gerr != nil {
 		return nil, gerr
 	}
 
 	b := &Bcache{
-		kspace:  ks,
 		persist: persist,
 		tsmap:   lru.New(2000000),
 		ksmap:   lru.New(256),
@@ -32,7 +30,6 @@ func New(sts *tsstats.StatsTS, ks *keyspace.Keyspace, path string) (*Bcache, gob
 
 //Bcache is responsible for caching timeseries keys from elasticsearch
 type Bcache struct {
-	kspace  *keyspace.Keyspace
 	persist *persistence
 	tsmap   *lru.Cache
 	ksmap   *lru.Cache
