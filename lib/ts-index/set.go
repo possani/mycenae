@@ -60,3 +60,12 @@ func (s *Set) Add(index, itype string, backend Backend) {
 	key := setKey{index: index, _type: itype}
 	s.indexes[key] = backend
 }
+
+// Delete deletes an index
+func (s *Set) Delete(index, itype string) {
+	s.Lock()
+	defer s.Unlock()
+
+	key := setKey{index: index, _type: itype}
+	delete(s.indexes, key)
+}

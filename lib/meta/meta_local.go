@@ -52,3 +52,8 @@ func (m *localMeta) CreateIndex(name string) gobol.Error {
 	m.index.Add(name, "meta", index.Create())
 	return nil
 }
+
+func (m *localMeta) DeleteIndex(index string) gobol.Error {
+	m.index.Delete(index, "meta")
+	return nil
+}

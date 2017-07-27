@@ -9,8 +9,8 @@ import (
 	"github.com/gocql/gocql"
 	"github.com/pborman/uuid"
 	"github.com/uol/gobol"
-	"github.com/uol/gobol/rubber"
 
+	"github.com/uol/mycenae/lib/meta"
 	"github.com/uol/mycenae/lib/tsstats"
 )
 
@@ -27,7 +27,7 @@ const DefaultCompaction = "org.apache.cassandra.db.compaction.TimeWindowCompacti
 func New(
 	sts *tsstats.StatsTS,
 	cass *gocql.Session,
-	es *rubber.Elastic,
+	meta *meta.Meta,
 	usernameGrant,
 	keyspaceMain string,
 	compaction string,
@@ -44,7 +44,6 @@ func New(
 	keyspace := &Keyspace{
 		persist: persistence{
 			cassandra:     cass,
-			esearch:       es,
 			usernameGrant: usernameGrant,
 			keyspaceMain:  keyspaceMain,
 			compaction:    compaction,

@@ -16,6 +16,7 @@ type Backend interface {
 	CheckTSID(esType, id string) (bool, gobol.Error)
 
 	CreateIndex(index string) gobol.Error
+	DeleteIndex(index string) gobol.Error
 }
 
 // Meta is a wrapper around the meta backend

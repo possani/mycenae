@@ -7,13 +7,13 @@ import (
 
 	"github.com/gocql/gocql"
 	"github.com/uol/gobol"
-	"github.com/uol/gobol/rubber"
+	"github.com/uol/mycenae/lib/meta"
 	"github.com/uol/mycenae/lib/tsstats"
 )
 
 type persistence struct {
 	cassandra     *gocql.Session
-	esearch       *rubber.Elastic
+	meta          *meta.Meta
 	usernameGrant string
 	keyspaceMain  string
 
@@ -399,25 +399,22 @@ func (persist *persistence) createIndex(esIndex string) gobol.Error {
 	start := time.Now()
 
 	body := &bytes.Buffer{}
-
 	body.WriteString(
 		`{"mappings":{"meta":{"properties":{"tagsNested":{"type":"nested","properties":{"tagKey":{"type":"string"},"tagValue":{"type":"string"}}}}},"metatext":{"properties":{"tagsNested":{"type":"nested","properties":{"tagKey":{"type":"string"},"tagValue":{"type":"string"}}}}}}}`,
 	)
 
-	_, err := persist.esearch.CreateIndex(esIndex, body)
+	err := persist.meta.CreateIndex(esIndex)
 	if err != nil {
 		statsIndexError(persist.stats, esIndex, "", "post")
 		return errPersist("CreateIndex", err)
 	}
-
 	statsIndex(persist.stats, esIndex, "", "post", time.Since(start))
 	return nil
 }
 
 func (persist *persistence) deleteIndex(esIndex string) gobol.Error {
 	start := time.Now()
-
-	_, err := persist.esearch.DeleteIndex(esIndex)
+	err := persist.meta.DeleteIndex(esIndex)
 	if err != nil {
 		statsIndexError(persist.stats, esIndex, "", "delete")
 		return errPersist("DeleteIndex", err)

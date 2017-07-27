@@ -119,7 +119,7 @@ func main() {
 	ks := keyspace.New(
 		tssts,
 		d.Session,
-		es,
+		meta,
 		settings.Depot.Cassandra.Username,
 		settings.Depot.Cassandra.Keyspace,
 		settings.CompactionStrategy,

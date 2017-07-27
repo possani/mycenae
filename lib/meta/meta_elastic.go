@@ -468,3 +468,15 @@ func (meta *elasticMeta) CreateIndex(index string) gobol.Error {
 	statsIndex(meta.stats, index, "", "post", time.Since(start))
 	return nil
 }
+
+func (meta *elasticMeta) DeleteIndex(index string) gobol.Error {
+	start := time.Now()
+	_, err := meta.persist.esearch.DeleteIndex(index)
+	if err != nil {
+		statsIndexError(meta.stats, index, "", "delete")
+		return errPersist("DeleteIndex", err)
+	}
+
+	statsIndex(meta.stats, index, "", "delete", time.Since(start))
+	return nil
+}
