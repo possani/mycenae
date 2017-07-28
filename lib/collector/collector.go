@@ -89,14 +89,12 @@ type Collector struct {
 }
 
 func (collect *Collector) CheckUDPbind() bool {
-
 	ctxt := gblog.With(
 		zap.String("struct", "CollectorV2"),
 		zap.String("func", "CheckUDPbind"),
 	)
 
 	port := ":" + collect.settings.UDPserverV2.Port
-
 	addr, err := net.ResolveUDPAddr("udp", port)
 	if err != nil {
 		ctxt.Error("addr:", zap.Error(err))
@@ -107,12 +105,10 @@ func (collect *Collector) CheckUDPbind() bool {
 		ctxt.Debug("", zap.Error(err))
 		return true
 	}
-
 	return false
 }
 
 func (collect *Collector) ReceivedErrorRatio() float64 {
-
 	ctxt := gblog.With(
 		zap.String("struct", "CollectorV2"),
 		zap.String("func", "ReceivedErrorRatio"),
