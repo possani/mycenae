@@ -147,7 +147,6 @@ func New(settings *Settings, l *zap.Logger) (*WAL, error) {
 // Start dispatchs a goroutine with a ticker
 // to save and sync points in disk
 func (wal *WAL) Start() {
-
 	wal.sync()
 	wal.checkpoint()
 
@@ -219,7 +218,6 @@ func (wal *WAL) Start() {
 
 		}
 	}()
-
 }
 
 func (wal *WAL) Stop() {

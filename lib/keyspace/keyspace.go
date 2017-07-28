@@ -47,7 +47,9 @@ func New(
 			usernameGrant: usernameGrant,
 			keyspaceMain:  keyspaceMain,
 			compaction:    compaction,
+			stats:         sts,
 		},
+		cache: make(map[string]bool),
 	}
 
 	go keyspace.warmUpCache()
@@ -127,7 +129,6 @@ func (keyspace *Keyspace) createKeyspace(ksc Config) (string, gobol.Error) {
 }
 
 func (keyspace *Keyspace) updateKeyspace(ksc ConfigUpdate, key string) gobol.Error {
-
 	count, gerr := keyspace.persist.countKeyspaceByKey(key)
 	if gerr != nil {
 		return gerr

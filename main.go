@@ -52,7 +52,7 @@ func main() {
 	if err != nil {
 		log.Fatal("ERROR - Starting logger: ", err)
 	}
-	go log.Println(http.ListenAndServe("0.0.0.0:6666", nil))
+	go func() { log.Println(http.ListenAndServe("0.0.0.0:6666", nil)) }()
 
 	sts, err := snitch.New(tsLogger, settings.Stats)
 	if err != nil {
