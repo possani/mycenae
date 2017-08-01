@@ -35,7 +35,6 @@ type singleServerBackend struct {
 }
 
 func (es *singleServerBackend) Request(index, method, urlPath string, body io.Reader) (int, []byte, error) {
-
 	ctxt := es.log.With(
 		zap.String("struct", "singleServerBackend"),
 		zap.String("func", "request"),

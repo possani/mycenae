@@ -14,11 +14,9 @@ import (
 	"github.com/uol/gobol"
 	"github.com/uol/gobol/rubber"
 	"github.com/uol/mycenae/lib/bcache"
+	pb "github.com/uol/mycenae/lib/proto"
 	"github.com/uol/mycenae/lib/tsstats"
 	"github.com/uol/mycenae/lib/utils"
-
-	pb "github.com/uol/mycenae/lib/proto"
-
 	"go.uber.org/zap"
 )
 
@@ -165,7 +163,6 @@ func (meta *elasticMeta) metaCoordinator(saveInterval time.Duration, headInterva
 					time.Sleep(headInterval)
 					meta.boltc.Set(ksts)
 					meta.sm.del(ksts)
-
 				}
 			}
 		}
@@ -198,7 +195,6 @@ func (meta *elasticMeta) metaCoordinator(saveInterval time.Duration, headInterva
 					zap.String("func", "metaCoordinator/SaveBulkES"),
 				)
 			}
-
 			if meta.metaPayload.Len() > meta.settings.MaxMetaBulkSize {
 				meta.concBulk <- struct{}{}
 				bulk := bytes.NewBuffer(nil)

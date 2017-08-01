@@ -6,21 +6,39 @@ import (
 	"github.com/uol/gobol"
 	pb "github.com/uol/mycenae/lib/proto"
 	index "github.com/uol/mycenae/lib/ts-index"
+	"go.uber.org/zap"
 )
 
 type localMeta struct {
-	index *index.Set
+	index  *index.Set
+	logger *zap.Logger
 }
 
-// NewLocal creates a local file meta store
-func NewLocal() Backend {
+func createLocal(logger *zap.Logger) *localMeta {
 	return &localMeta{
-		index: index.CreateSet(),
+		index:  index.CreateSet(),
+		logger: logger,
 	}
 }
 
+// NewLocal creates a local file meta store
+func NewLocal(logger *zap.Logger) Backend {
+	return createLocal(logger)
+}
+
 func (m *localMeta) Handle(pkt *pb.Meta) bool {
-	found, err := m.index.Get(pkt.GetKsid(), "meta").Exists(index.ParseID(pkt.GetTsid()))
+	lindex := m.index.Get(pkt.GetKsid(), "meta")
+	found, err := lindex.Exists(index.ParseID(pkt.GetTsid()))
+	if err != nil {
+		m.logger.Debug("Error getting index",
+			zap.String("function", "Handle"),
+			zap.String("structurte", "localMeta"),
+			zap.String("package", "meta"),
+		)
+	}
+	if !found {
+		lindex.Add(index.Metric(pkt.GetMetric()), index.ParseTags(pkt.GetTags()), index.ParseID(pkt.GetTsid()))
+	}
 	return (err != nil || !found)
 }
 

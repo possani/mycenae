@@ -3,6 +3,8 @@ package index
 import (
 	"io"
 	"strconv"
+
+	pb "github.com/uol/mycenae/lib/proto"
 )
 
 // Metric refers to a timeseries metric
@@ -16,6 +18,16 @@ func (m Metric) String() string {
 type KVPair struct {
 	Key   string
 	Value string
+}
+
+// ParseTags convert from the protobuf format to the internal representation
+func ParseTags(tags []*pb.Tag) []KVPair {
+	convert := make([]KVPair, len(tags))
+	for index, tag := range tags {
+		convert[index].Key = tag.GetKey()
+		convert[index].Value = tag.GetValue()
+	}
+	return convert
 }
 
 // ID is a unique timeseries identifier
