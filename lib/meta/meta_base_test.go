@@ -114,7 +114,6 @@ func TestLocalBackend(t *testing.T) {
 		return
 	}
 	assert.NotNil(t, backend)
-
 	genericBackendTesting(t, backend)
 }
 
@@ -124,6 +123,5 @@ func TestElasticBackend(t *testing.T) {
 		return
 	}
 	assert.NotNil(t, backend)
-
 	genericBackendTesting(t, backend)
 }
