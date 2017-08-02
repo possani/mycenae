@@ -200,13 +200,13 @@ func main() {
 				err := cluster.WAL(&p)
 				if err != nil {
 					logger.Error(
-						"failure loading point from write-ahead-log",
+						"failure loading point from write-ahead-log (wal)",
 						zap.Error(err),
 					)
 				}
 			}
 		}
-		logger.Debug("finished loading points from commitlog")
+		logger.Debug("finished loading points")
 	}()
 
 	signalChannel := make(chan os.Signal, 1)
