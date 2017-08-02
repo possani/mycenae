@@ -31,6 +31,7 @@ type Settings struct {
 	MaxConcurrentPoints     int
 	LogQueryTSthreshold     int
 	MaxRateLimit            int
+	Workers                 int
 	Burst                   int
 	CompactionStrategy      string
 	Meta                    *meta.Settings

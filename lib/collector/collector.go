@@ -22,7 +22,6 @@ import (
 	"github.com/uol/mycenae/lib/meta"
 	"github.com/uol/mycenae/lib/structs"
 	"github.com/uol/mycenae/lib/tsstats"
-	"github.com/uol/mycenae/lib/utils"
 
 	pb "github.com/uol/mycenae/lib/proto"
 
@@ -62,6 +61,7 @@ func New(
 		validKSID:  regexp.MustCompile(`^[0-9a-z_]+$`),
 		settings:   set,
 		concPoints: make(chan struct{}, set.MaxConcurrentPoints),
+		jobQueue:   make(chan Job),
 		wLimiter:   wLimiter,
 	}
 
@@ -78,6 +78,7 @@ type Collector struct {
 	settings  *structs.Settings
 
 	concPoints chan struct{}
+	jobQueue   chan Job
 
 	receivedSinceLastProbe int64
 	errorsSinceLastProbe   int64
@@ -142,62 +143,22 @@ func (collect *Collector) Stop() {
 func (collect *Collector) HandlePoint(points gorilla.TSDBpoints) RestErrors {
 
 	start := time.Now()
-
 	returnPoints := RestErrors{}
-	var wg sync.WaitGroup
 
 	pts := make([]*pb.TSPoint, len(points))
-
 	mm := make(map[string]*pb.Meta)
-	var mtx sync.Mutex
+
+	wg := sync.WaitGroup{}
+	mtx := sync.Mutex{}
 
 	wg.Add(len(points))
 	for i, rcvMsg := range points {
 
-		go func(rcvMsg gorilla.TSDBpoint, i int) {
+		job := Job{rcvMsg, i, &returnPoints, &wg, pts, mm, &mtx}
 
-			ks := "invalid"
-			if collect.isKSIDValid(rcvMsg.Tags["ksid"]) {
-				ks = rcvMsg.Tags["ksid"]
-			}
+		collect.jobQueue <- job
 
-			atomic.AddInt64(&collect.receivedSinceLastProbe, 1)
-			statsPoints(ks, "number")
-
-			defer wg.Done()
-
-			packet := &pb.TSPoint{}
-			m := &pb.Meta{}
-
-			gerr := collect.makePoint(packet, m, &rcvMsg)
-			if gerr != nil {
-				atomic.AddInt64(&collect.errorsSinceLastProbe, 1)
-
-				gblog.Error("makePacket", zap.Error(gerr))
-				reu := RestErrorUser{
-					Datapoint: rcvMsg,
-					Error:     gerr.Message(),
-				}
-				mtx.Lock()
-				returnPoints.Errors = append(returnPoints.Errors, reu)
-				mtx.Unlock()
-
-				statsPointsError(ks, "number")
-				return
-			}
-
-			ksts := utils.KSTS(m.GetKsid(), m.GetTsid())
-
-			mtx.Lock()
-			pts[i] = packet
-			if _, ok := mm[string(ksts)]; !ok {
-				mm[string(ksts)] = m
-			}
-			mtx.Unlock()
-
-		}(rcvMsg, i)
 	}
-
 	wg.Wait()
 
 	gerr := collect.persist.cluster.Write(pts)

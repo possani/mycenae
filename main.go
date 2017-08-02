@@ -144,6 +144,8 @@ func main() {
 		tsLogger.Fatal(err.Error())
 	}
 
+	coll.RunWorkers(settings.Workers)
+
 	uV2server := udp.New(tsLogger, settings.UDPserverV2, coll)
 	uV2server.Start()
 

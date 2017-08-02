@@ -51,6 +51,9 @@ MaxMetaBulkSize = 1000000
 # Number of points in buffer
 MetaBufferSize = 100000
 
+# Number of goroutines processing points
+Workers = 40
+
 MetaSaveInterval = "1s"
 MaxRateLimit = 2000
 Burst = 10000
