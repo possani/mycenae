@@ -540,8 +540,7 @@ func (wal *WAL) Load() <-chan []pb.TSPoint {
 			)
 		}
 
-		fCount := len(names) - 1
-		if fCount < 1 {
+		if len(names)-1 < 1 {
 			log.Debug("no wal to load")
 			return
 		}
@@ -556,14 +555,9 @@ func (wal *WAL) Load() <-chan []pb.TSPoint {
 			wal.settings.PathWAL,
 			fmt.Sprintf("%05d-%s", wal.id, fileSuffixName),
 		)
-		for {
+		for _, filepath := range names {
 
-			filepath := names[fCount]
 			if filepath == currentLog {
-				fCount--
-				if fCount < 0 {
-					break
-				}
 				continue
 			}
 
@@ -660,12 +654,6 @@ func (wal *WAL) Load() <-chan []pb.TSPoint {
 					break
 				}
 
-			}
-
-			fCount--
-			if fCount < 0 {
-				log.Debug("no more wal files to load")
-				break
 			}
 
 		}
