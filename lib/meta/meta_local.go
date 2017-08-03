@@ -27,7 +27,22 @@ func NewLocal(logger *zap.Logger) Backend {
 }
 
 func (m *localMeta) Handle(pkt *pb.Meta) bool {
+	m.logger.Debug("Handling package",
+		zap.String("function", "Handle"),
+		zap.String("structurte", "localMeta"),
+		zap.String("package", "meta"),
+	)
 	lindex := m.index.Get(pkt.GetKsid(), "meta")
+	if lindex == nil {
+		m.CreateIndex(pkt.GetKsid())
+		lindex = m.index.Get(pkt.GetKsid(), "meta")
+		m.logger.Debug("Creating index",
+			zap.String("index", pkt.GetKsid()),
+			zap.String("function", "Handle"),
+			zap.String("structurte", "localMeta"),
+			zap.String("package", "meta"),
+		)
+	}
 	found, err := lindex.Exists(index.ParseID(pkt.GetTsid()))
 	if err != nil {
 		m.logger.Debug("Error getting index",
@@ -37,9 +52,16 @@ func (m *localMeta) Handle(pkt *pb.Meta) bool {
 		)
 	}
 	if !found {
-		lindex.Add(index.Metric(pkt.GetMetric()), index.ParseTags(pkt.GetTags()), index.ParseID(pkt.GetTsid()))
+		err = lindex.Add(index.Metric(pkt.GetMetric()), index.ParseTags(pkt.GetTags()), index.ParseID(pkt.GetTsid()))
+		if err != nil {
+			m.logger.Debug("Error indexing timeseries",
+				zap.String("function", "Handle"),
+				zap.String("structurte", "localMeta"),
+				zap.String("package", "meta"),
+			)
+		}
 	}
-	return (err != nil || !found)
+	return (err == nil && !found)
 }
 
 func (m *localMeta) SaveTxtMeta(packet *pb.Meta) {

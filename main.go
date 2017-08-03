@@ -24,7 +24,7 @@ import (
 	"github.com/uol/mycenae/lib/gorilla"
 	"github.com/uol/mycenae/lib/keyspace"
 	"github.com/uol/mycenae/lib/limiter"
-	"github.com/uol/mycenae/lib/meta"
+	tsmeta "github.com/uol/mycenae/lib/meta"
 	"github.com/uol/mycenae/lib/plot"
 	"github.com/uol/mycenae/lib/rest"
 	"github.com/uol/mycenae/lib/structs"
@@ -103,9 +103,14 @@ func main() {
 		tsLogger.Fatal("", zap.Error(err))
 	}
 
-	meta, err := meta.New(tsLogger, tssts, es, bc, settings.Meta)
-	if err != nil {
-		tsLogger.Fatal("", zap.Error(err))
+	var meta *tsmeta.Meta
+	if true {
+		meta = tsmeta.Create(tsmeta.NewLocal(tsLogger))
+	} else {
+		meta, err = tsmeta.New(tsLogger, tssts, es, bc, settings.Meta)
+		if err != nil {
+			tsLogger.Fatal("", zap.Error(err))
+		}
 	}
 
 	ks := keyspace.New(

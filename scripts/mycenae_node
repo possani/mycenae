@@ -59,9 +59,7 @@ consul_arguments=(
 docker run "${arguments[@]}" consul:0.8.3 "${consul_arguments[@]}"
 name2="mycenae${1}"
 docker rm -f ${name2}
-tmpdir=/tmp/${name2}
-#sudo rm -rf ${tmpdir}
-mkdir -pv ${tmpdir}
+tmpdir=$(mktemp -d)
 
 pod_arguments=(
     '--detach'
