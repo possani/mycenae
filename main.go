@@ -104,12 +104,12 @@ func main() {
 	}
 
 	var meta *tsmeta.Meta
-	if true {
+	if false {
 		meta = tsmeta.Create(tsmeta.NewLocal(tsLogger))
 	} else {
 		meta, err = tsmeta.New(tsLogger, tssts, es, bc, settings.Meta)
 		if err != nil {
-			tsLogger.Fatal("", zap.Error(err))
+			tsLogger.Fatal("Error starting meta module", zap.Error(err))
 		}
 	}
 
