@@ -11,20 +11,6 @@ import (
 	"github.com/uol/mycenae/tests/tools"
 )
 
-type TextPoint struct {
-	Text      string            `json:"text"`
-	Metric    string            `json:"metric"`
-	Tags      map[string]string `json:"tags"`
-	Timestamp int64             `json:"timestamp"`
-}
-
-type NumericPoint struct {
-	Value     float64           `json:"value"`
-	Metric    string            `json:"metric"`
-	Tags      map[string]string `json:"tags"`
-	Timestamp int64             `json:"timestamp"`
-}
-
 var hashMapPV2T map[string]string
 
 func tsPointsV2Text(keyspace string) {
@@ -68,7 +54,7 @@ func tsPointsV2Text(keyspace string) {
 
 	for test, data := range cases {
 
-		Points := make([]TextPoint, data.numTotal)
+		Points := make([]tools.TextPoint, data.numTotal)
 
 		for i := 0; i < data.numTotal; i++ {
 			Points[i].Text = fmt.Sprintf("%v%.1f", data.value, data.count)
@@ -109,7 +95,7 @@ func tsText4(keyspace string) bool {
 	}
 
 	const numTotal int = 100
-	Points := [numTotal]TextPoint{}
+	Points := [numTotal]tools.TextPoint{}
 
 	for i := 0; i < numTotal; i++ {
 		Points[i].Text = value
@@ -152,8 +138,8 @@ func tsText6(keyspace string) bool {
 	value := "test"
 	count := 1.0
 	const numTotal int = 100
-	TextPoints := [numTotal]TextPoint{}
-	Points := [numTotal]NumericPoint{}
+	TextPoints := [numTotal]tools.TextPoint{}
+	Points := [numTotal]tools.Point{}
 
 	for i := 0; i < numTotal; i++ {
 		TextPoints[i].Text = fmt.Sprintf("%v%.1f", value, count)
@@ -178,7 +164,7 @@ func tsText6(keyspace string) bool {
 	count = 1.0
 	startTime = 1448452800
 	for i := 0; i < numTotal; i++ {
-		Points[i].Value = count
+		Points[i].Value = float32(count)
 		Points[i].Metric = metric
 		Points[i].Tags = map[string]string{
 			"ksid": keyspace,
@@ -257,7 +243,7 @@ func TestPointsV2TextLimitTrue(t *testing.T) {
 		count++
 
 		assert.Exactly(t, dateStart, value[0])
-		dateStart = dateStart + time.Minute.Seconds() * 1000
+		dateStart = dateStart + time.Minute.Seconds()*1000
 	}
 }
 
@@ -282,7 +268,7 @@ func TestPointsV2TextLimitFalse(t *testing.T) {
 		count++
 
 		assert.Exactly(t, dateStart, value[0])
-		dateStart = dateStart + time.Minute.Seconds() * 1000
+		dateStart = dateStart + time.Minute.Seconds()*1000
 	}
 }
 
@@ -304,7 +290,7 @@ func TestPointsV2TextWithoutDownsample(t *testing.T) {
 		count++
 
 		assert.Exactly(t, dateStart, value[0])
-		dateStart = dateStart + time.Minute.Seconds() * 1000
+		dateStart = dateStart + time.Minute.Seconds()*1000
 	}
 }
 
@@ -330,7 +316,7 @@ func TestPointsV2TextDateLimit(t *testing.T) {
 		count++
 
 		assert.Exactly(t, dateStart, value[0])
-		dateStart = dateStart + time.Minute.Seconds() * 1000
+		dateStart = dateStart + time.Minute.Seconds()*1000
 	}
 }
 
@@ -355,7 +341,7 @@ func TestPointsV2TextFirstPointsNull(t *testing.T) {
 		count++
 
 		assert.Exactly(t, dateStart, value[0])
-		dateStart = dateStart + time.Minute.Seconds() * 1000
+		dateStart = dateStart + time.Minute.Seconds()*1000
 	}
 }
 
@@ -380,7 +366,7 @@ func TestPointsV2TextLastPointsNull(t *testing.T) {
 		count++
 
 		assert.Exactly(t, dateStart, value[0])
-		dateStart = dateStart + time.Minute.Seconds() * 1000
+		dateStart = dateStart + time.Minute.Seconds()*1000
 	}
 }
 
@@ -392,7 +378,7 @@ func TestPointsV2TextNoPointsUpper(t *testing.T) {
 		"start": 1448458741000,
 		"end": 1448558740000
 	}`
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/points", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/points", []byte(payload))
 
 	if err != nil {
 		t.Error(err)
@@ -411,7 +397,7 @@ func TestPointsV2TextNoPointsBelow(t *testing.T) {
 		"start": 1438458741000,
 		"end": 1448452700000
 	}`
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/points", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/points", []byte(payload))
 
 	if err != nil {
 		t.Error(err)
@@ -443,7 +429,7 @@ func TestPointsV2TextMoreThanOneTS(t *testing.T) {
 		count++
 
 		assert.Exactly(t, dateStart, value[0])
-		dateStart = dateStart + time.Minute.Seconds() * 1000
+		dateStart = dateStart + time.Minute.Seconds()*1000
 	}
 
 	assert.Equal(t, 25, payloadPoints.Payload[hashMapPV2T["tsText2"]].Points.Count)
@@ -532,7 +518,7 @@ func TestPointsV2TextTSWithNumbersAndText(t *testing.T) {
 		count++
 
 		assert.Exactly(t, dateStart, value[0])
-		dateStart = dateStart + time.Minute.Seconds() * 1000
+		dateStart = dateStart + time.Minute.Seconds()*1000
 	}
 
 }
@@ -552,7 +538,7 @@ func TestPointsV2TextMergeText(t *testing.T) {
 		"start": 1148452800000,
   		"end": 1848458770000
 	}`
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/points", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/points", []byte(payload))
 	if err != nil {
 		t.Error(err)
 		t.SkipNow()
@@ -568,14 +554,14 @@ func TestPointsV2TextMergeText(t *testing.T) {
 		t.SkipNow()
 	}
 
-	assert.Equal(t, 200, payloadPoints.Payload[ksMycenae + "|merged:[" + nameTS + "]"].Points.Count)
-	assert.Equal(t, 200, payloadPoints.Payload[ksMycenae + "|merged:[" + nameTS + "]"].Points.Total)
-	assert.Equal(t, 200, len(payloadPoints.Payload[ksMycenae + "|merged:[" + nameTS + "]"].Points.Ts))
+	assert.Equal(t, 200, payloadPoints.Payload[ksMycenae+"|merged:["+nameTS+"]"].Points.Count)
+	assert.Equal(t, 200, payloadPoints.Payload[ksMycenae+"|merged:["+nameTS+"]"].Points.Total)
+	assert.Equal(t, 200, len(payloadPoints.Payload[ksMycenae+"|merged:["+nameTS+"]"].Points.Ts))
 
 	dateStart := 1448452800000.0
 	count := 0
 	i := 1.0
-	for _, value := range payloadPoints.Payload[ksMycenae + "|merged:[" + nameTS + "]"].Points.Ts {
+	for _, value := range payloadPoints.Payload[ksMycenae+"|merged:["+nameTS+"]"].Points.Ts {
 
 		if count == 0 {
 			assert.Exactly(t, fmt.Sprintf("%v%.1f", "test", i), value[1].(string))

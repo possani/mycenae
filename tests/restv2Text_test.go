@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-
 	"github.com/uol/mycenae/tests/tools"
 )
 
@@ -108,14 +107,14 @@ func assertRESTextError(t *testing.T, err tools.RestErrors, payload *tools.Paylo
 	if assert.Equal(t, 1, len(err.Errors)) {
 
 		if payload.Metric == "" {
-			assert.Nil(t, err.Errors[0].Datapoint.Metric)
+			assert.Empty(t, err.Errors[0].Datapoint.Metric)
 		} else {
-			assert.Equal(t, payload.Metric, *err.Errors[0].Datapoint.Metric)
+			assert.Equal(t, payload.Metric, err.Errors[0].Datapoint.Metric)
 		}
 
 		if payload.Text != nil && *payload.Text != "" {
 
-			assert.Equal(t, *payload.Text, *err.Errors[0].Datapoint.Text)
+			assert.Equal(t, *payload.Text, err.Errors[0].Datapoint.Text)
 		}
 
 		assert.Equal(t, len(payload.Tags), len(err.Errors[0].Datapoint.Tags))
@@ -745,7 +744,7 @@ func TestRESTv2TextPayloadWithInvalidCharsAtOnce(t *testing.T) {
 
 	for i, err := range restError.Errors {
 
-		assert.Equal(t, *payload[0].Text, *restError.Errors[i].Datapoint.Text)
+		assert.Equal(t, *payload[0].Text, restError.Errors[i].Datapoint.Text)
 		assert.Equal(t, len(payload[0].Tags), len(restError.Errors[i].Datapoint.Tags))
 		assert.Equal(t, payload[0].Tags["ksid"], restError.Errors[i].Datapoint.Tags["ksid"])
 		assert.Contains(t, err.Error, "Wrong Format: ")
@@ -1084,7 +1083,20 @@ func TestRESTv2TextEmptyPayload(t *testing.T) {
 	statusCode, resp := mycenaeTools.HTTP.POSTstring("v2/text", payload)
 	assert.Equal(t, 400, statusCode)
 
-	assert.Equal(t, fmt.Sprintf(`{"error":"no points","message":"no points"}%s`, "\n"), string(resp))
+	expectedErr := tools.Error{
+		Error:   "no points",
+		Message: "no points",
+	}
+
+	receivedErr := tools.Error{}
+
+	err := json.Unmarshal(resp, &receivedErr)
+	if err != nil {
+		t.Error(err, t)
+		t.SkipNow()
+	}
+
+	assert.Equal(t, expectedErr, receivedErr)
 }
 
 func TestRESTv2TextBucketLimits(t *testing.T) {

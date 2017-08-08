@@ -11,13 +11,6 @@ import (
 	"github.com/uol/mycenae/tests/tools"
 )
 
-type Point struct {
-	Value     float64           `json:"value"`
-	Metric    string            `json:"metric"`
-	Tags      map[string]string `json:"tags"`
-	Timestamp int64             `json:"timestamp"`
-}
-
 var ts10ID string
 
 var hashMapPV2 map[string]string
@@ -73,10 +66,10 @@ func tsPointsV2(keyspace string) {
 
 	for test, data := range cases {
 
-		Points := make([]Point, data.numTotal)
+		Points := make([]tools.Point, data.numTotal)
 
 		for i := 0; i < data.numTotal; i++ {
-			Points[i].Value = data.value
+			Points[i].Value = float32(data.value)
 			Points[i].Metric = data.metric
 			Points[i].Tags = map[string]string{
 				"ksid": keyspace,
@@ -112,10 +105,10 @@ func ts10(keyspace string) {
 	value := 0.0
 	value2 := 0.0
 	const numTotal int = 75
-	Points := [numTotal]Point{}
+	Points := [numTotal]tools.Point{}
 
 	for i := 0; i < numTotal; i++ {
-		Points[i].Value = value
+		Points[i].Value = float32(value)
 		Points[i].Metric = metric
 		Points[i].Tags = map[string]string{
 			"ksid": keyspace,
@@ -124,7 +117,7 @@ func ts10(keyspace string) {
 		Points[i].Timestamp = int64(startTime)
 		i++
 
-		Points[i].Value = value2
+		Points[i].Value = float32(value2)
 		Points[i].Metric = metric
 		Points[i].Tags = map[string]string{
 			"ksid":  keyspace,
@@ -135,7 +128,7 @@ func ts10(keyspace string) {
 		i++
 		value2++
 
-		Points[i].Value = value2
+		Points[i].Value = float32(value2)
 		Points[i].Metric = metric
 		Points[i].Tags = map[string]string{
 			"ksid":  keyspace,
@@ -305,7 +298,7 @@ func TestPointsV2LimitTrueNoPoints(t *testing.T) {
 		"end": 1348452800000
 	}`
 
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/points", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/points", []byte(payload))
 	if err != nil {
 		t.Error(err)
 		t.SkipNow()
@@ -332,7 +325,7 @@ func TestPointsV2LimitTrueAproxMedia(t *testing.T) {
 		"end": 1448458381000
 	}`
 
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/points", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/points", []byte(payload))
 	if err != nil {
 		t.Error(err)
 		t.SkipNow()
@@ -419,7 +412,7 @@ func TestPointsV2LimitTrueAproxMin(t *testing.T) {
 		"end": 1448458381000
 	}`
 
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/points", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/points", []byte(payload))
 	if err != nil {
 		t.Error(err)
 		t.SkipNow()
@@ -596,7 +589,7 @@ func TestPointsV2LimitTrueAproxMaxHour(t *testing.T) {
 		"end": 1449316800000
 	}`
 
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/points", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/points", []byte(payload))
 	if err != nil {
 		t.Error(err)
 		t.SkipNow()
@@ -868,7 +861,7 @@ func TestPointsV2LimitTrueAvgMaiorLimit2(t *testing.T) {
 	dateStart := 1448452890000.0
 	for _, value := range payloadPoints.Payload[hashMapPV2["ts2_3"]].Points.Ts {
 
-		avg := (i + (i + 1) + (i + 2)) / 3 + i + 0.5
+		avg := (i+(i+1)+(i+2))/3 + i + 0.5
 
 		assert.Exactly(t, avg, value[1])
 		i++
@@ -1035,7 +1028,7 @@ func TestPointsV2MergeDateLimit(t *testing.T) {
 		"end": 1448458740000
 	}`
 
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/points", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/points", []byte(payload))
 	if err != nil {
 		t.Error(err)
 		t.SkipNow()
@@ -1050,15 +1043,15 @@ func TestPointsV2MergeDateLimit(t *testing.T) {
 	}
 
 	assert.Equal(t, 200, code)
-	assert.Equal(t, 100, payloadPoints.Payload[ksMycenae + "|merged:[" + nameTS + "]"].Points.Count)
-	assert.Equal(t, 100, payloadPoints.Payload[ksMycenae + "|merged:[" + nameTS + "]"].Points.Count)
-	assert.Equal(t, 100, len(payloadPoints.Payload[ksMycenae + "|merged:[" + nameTS + "]"].Points.Ts))
+	assert.Equal(t, 100, payloadPoints.Payload[ksMycenae+"|merged:["+nameTS+"]"].Points.Count)
+	assert.Equal(t, 100, payloadPoints.Payload[ksMycenae+"|merged:["+nameTS+"]"].Points.Count)
+	assert.Equal(t, 100, len(payloadPoints.Payload[ksMycenae+"|merged:["+nameTS+"]"].Points.Ts))
 
 	i := 0.0
 	dateStart := 1448452800000.0
-	for _, value := range payloadPoints.Payload[ksMycenae + "|merged:[" + nameTS + "]"].Points.Ts {
+	for _, value := range payloadPoints.Payload[ksMycenae+"|merged:["+nameTS+"]"].Points.Ts {
 
-		assert.Exactly(t, i + i, value[1])
+		assert.Exactly(t, i+i, value[1])
 		i++
 
 		dateStart += time.Minute.Seconds() * 1000
@@ -1088,10 +1081,10 @@ func TestPointsV2LimitTrueMergeMenorLimit2(t *testing.T) {
 		"end": 1448458150000
 	}`
 
-	payloadPoints := postPointsAndCheck(t, payload, ksMycenae + "|merged:[" + nameTS + "]", 200, 90, 90, 90)
+	payloadPoints := postPointsAndCheck(t, payload, ksMycenae+"|merged:["+nameTS+"]", 200, 90, 90, 90)
 
 	i := 0.0
-	for _, value := range payloadPoints.Payload[ksMycenae + "|merged:[" + nameTS + "]"].Points.Ts {
+	for _, value := range payloadPoints.Payload[ksMycenae+"|merged:["+nameTS+"]"].Points.Ts {
 
 		assert.Exactly(t, i, value[1])
 		i++
@@ -1120,10 +1113,10 @@ func TestPointsV2LimitTrueMergeMaiorLimit2(t *testing.T) {
 		"end": 1448458150000
 	}`
 
-	payloadPoints := postPointsAndCheck(t, payload, ksMycenae + "|merged:[" + nameTS + "]", 200, 45, 90, 45)
+	payloadPoints := postPointsAndCheck(t, payload, ksMycenae+"|merged:["+nameTS+"]", 200, 45, 90, 45)
 
 	i := 0.0
-	for _, value := range payloadPoints.Payload[ksMycenae + "|merged:[" + nameTS + "]"].Points.Ts {
+	for _, value := range payloadPoints.Payload[ksMycenae+"|merged:["+nameTS+"]"].Points.Ts {
 		sum := (i + i + 1) / 2
 
 		assert.Exactly(t, sum, value[1])
@@ -1151,12 +1144,12 @@ func TestPointsV2LimitTrueMergeBiggerPointsSameDate(t *testing.T) {
 		"end": 1448458150000
 	}`
 
-	payloadPoints := postPointsAndCheck(t, payload, ksMycenae + "|merged:[" + nameTS + "]", 200, 90, 180, 90)
+	payloadPoints := postPointsAndCheck(t, payload, ksMycenae+"|merged:["+nameTS+"]", 200, 90, 180, 90)
 
 	i := 0.0
-	for _, value := range payloadPoints.Payload[ksMycenae + "|merged:[" + nameTS + "]"].Points.Ts {
+	for _, value := range payloadPoints.Payload[ksMycenae+"|merged:["+nameTS+"]"].Points.Ts {
 
-		assert.Exactly(t, i * 2, value[1])
+		assert.Exactly(t, i*2, value[1])
 		i++
 	}
 }
@@ -1179,11 +1172,11 @@ func TestPointsV2MergeAvg(t *testing.T) {
 		"end": 1448458150000
 	}`
 
-	payloadPoints := postPointsAndCheck(t, payload, ksMycenae + "|merged:[" + nameTS + "]", 200, 90, 180, 90)
+	payloadPoints := postPointsAndCheck(t, payload, ksMycenae+"|merged:["+nameTS+"]", 200, 90, 180, 90)
 
 	i := 0.0
 	j := 0.0
-	for _, value := range payloadPoints.Payload[ksMycenae + "|merged:[" + nameTS + "]"].Points.Ts {
+	for _, value := range payloadPoints.Payload[ksMycenae+"|merged:["+nameTS+"]"].Points.Ts {
 
 		avg := (i + j) / 2
 		assert.Exactly(t, avg, value[1])
@@ -1210,10 +1203,10 @@ func TestPointsV2MergeMin(t *testing.T) {
 		"end": 1448458150000
 	}`
 
-	payloadPoints := postPointsAndCheck(t, payload, ksMycenae + "|merged:[" + nameTS + "]", 200, 90, 180, 90)
+	payloadPoints := postPointsAndCheck(t, payload, ksMycenae+"|merged:["+nameTS+"]", 200, 90, 180, 90)
 
 	i := 0.0
-	for _, value := range payloadPoints.Payload[ksMycenae + "|merged:[" + nameTS + "]"].Points.Ts {
+	for _, value := range payloadPoints.Payload[ksMycenae+"|merged:["+nameTS+"]"].Points.Ts {
 
 		assert.Exactly(t, i, value[1])
 		i++
@@ -1238,10 +1231,10 @@ func TestPointsV2MergeMax(t *testing.T) {
 		"end": 1448458150000
 	}`
 
-	payloadPoints := postPointsAndCheck(t, payload, ksMycenae + "|merged:[" + nameTS + "]", 200, 90, 180, 90)
+	payloadPoints := postPointsAndCheck(t, payload, ksMycenae+"|merged:["+nameTS+"]", 200, 90, 180, 90)
 
 	j := 0.0
-	for _, value := range payloadPoints.Payload[ksMycenae + "|merged:[" + nameTS + "]"].Points.Ts {
+	for _, value := range payloadPoints.Payload[ksMycenae+"|merged:["+nameTS+"]"].Points.Ts {
 
 		assert.Exactly(t, j, value[1])
 		j += 5
@@ -1266,11 +1259,11 @@ func TestPointsV2MergeSum(t *testing.T) {
 		"end": 1448458150000
 	}`
 
-	payloadPoints := postPointsAndCheck(t, payload, ksMycenae + "|merged:[" + nameTS + "]", 200, 90, 180, 90)
+	payloadPoints := postPointsAndCheck(t, payload, ksMycenae+"|merged:["+nameTS+"]", 200, 90, 180, 90)
 
 	i := 0.0
 	j := 0.0
-	for _, value := range payloadPoints.Payload[ksMycenae + "|merged:[" + nameTS + "]"].Points.Ts {
+	for _, value := range payloadPoints.Payload[ksMycenae+"|merged:["+nameTS+"]"].Points.Ts {
 
 		sum := i + j
 		assert.Exactly(t, sum, value[1])
@@ -1305,15 +1298,15 @@ func TestPointsV2MergeSumEnabledAvg(t *testing.T) {
 		"end": 1448458150000
 	}`
 
-	payloadPoints := postPointsAndCheck(t, payload, ksMycenae + "|merged:[" + nameTS + "]", 200, 30, 180, 30)
+	payloadPoints := postPointsAndCheck(t, payload, ksMycenae+"|merged:["+nameTS+"]", 200, 30, 180, 30)
 
 	i := 0.0
 	j := 0.0
 	dateStart := 1448452800000.0
-	for _, value := range payloadPoints.Payload[ksMycenae + "|merged:[" + nameTS + "]"].Points.Ts {
+	for _, value := range payloadPoints.Payload[ksMycenae+"|merged:["+nameTS+"]"].Points.Ts {
 
 		//sum := ((i + j) + (i + 1 + j + 5) + (i + 2 + j + 10)) / 3
-		sum := (i + i + 1 + i + 2) / 3 + (j + j + 5 + j + 10) / 3
+		sum := (i+i+1+i+2)/3 + (j+j+5+j+10)/3
 
 		assert.Exactly(t, sum, value[1])
 		i += 3
@@ -1350,12 +1343,12 @@ func TestPointsV2MergeSumEnabledSum(t *testing.T) {
 		"end": 1448458150000
 	}`
 
-	payloadPoints := postPointsAndCheck(t, payload, ksMycenae + "|merged:[" + nameTS + "]", 200, 30, 180, 30)
+	payloadPoints := postPointsAndCheck(t, payload, ksMycenae+"|merged:["+nameTS+"]", 200, 30, 180, 30)
 
 	i := 0.0
 	j := 0.0
 	dateStart := 1448452800000.0
-	for _, value := range payloadPoints.Payload[ksMycenae + "|merged:[" + nameTS + "]"].Points.Ts {
+	for _, value := range payloadPoints.Payload[ksMycenae+"|merged:["+nameTS+"]"].Points.Ts {
 
 		//sum := ((i + j) + (i + 1 + j + 5) + (i + 2 + j + 10))
 		sum := (i + i + 1 + i + 2) + (j + j + 5 + j + 10)
@@ -1394,11 +1387,11 @@ func TestPointsV2MergeSumEnabledPnt(t *testing.T) {
 		"end": 1448458080000
 	}`
 
-	payloadPoints := postPointsAndCheck(t, payload, ksMycenae + "|merged:[" + nameTS + "]", 200, 30, 178, 30)
+	payloadPoints := postPointsAndCheck(t, payload, ksMycenae+"|merged:["+nameTS+"]", 200, 30, 178, 30)
 
 	dateStart := 1448452800000.0
 	i := 6.0
-	for _, value := range payloadPoints.Payload[ksMycenae + "|merged:[" + nameTS + "]"].Points.Ts {
+	for _, value := range payloadPoints.Payload[ksMycenae+"|merged:["+nameTS+"]"].Points.Ts {
 
 		if int64(value[0].(float64)) < 1448458020000 {
 
@@ -1441,11 +1434,11 @@ func TestPointsV2MergeSumEnabledPntHour(t *testing.T) {
 		"end": 1448458150000
 	}`
 
-	payloadPoints := postPointsAndCheck(t, payload, ksMycenae + "|merged:[" + nameTS + "]", 200, 2, 180, 2)
+	payloadPoints := postPointsAndCheck(t, payload, ksMycenae+"|merged:["+nameTS+"]", 200, 2, 180, 2)
 
 	sum := 120.0
 	dateStart := 1448452800000.0
-	for _, value := range payloadPoints.Payload[ksMycenae + "|merged:[" + nameTS + "]"].Points.Ts {
+	for _, value := range payloadPoints.Payload[ksMycenae+"|merged:["+nameTS+"]"].Points.Ts {
 
 		assert.Exactly(t, sum, value[1])
 		sum -= 60
@@ -1483,15 +1476,15 @@ func TestPointsV2MergeSumEnabledAvgMinAproxMin(t *testing.T) {
 		"end": 1448458150000
 	}`
 
-	payloadPoints := postPointsAndCheck(t, payload, ksMycenae + "|merged:[" + nameTS + "]", 200, 30, 180, 30)
+	payloadPoints := postPointsAndCheck(t, payload, ksMycenae+"|merged:["+nameTS+"]", 200, 30, 180, 30)
 
 	i := 0.0
 	j := 0.0
 	dateStart := 1448452800000.0
-	for _, value := range payloadPoints.Payload[ksMycenae + "|merged:[" + nameTS + "]"].Points.Ts {
+	for _, value := range payloadPoints.Payload[ksMycenae+"|merged:["+nameTS+"]"].Points.Ts {
 
 		//sum := ((i + j) + (i + 1 + j + 5) + (i + 2 + j + 10)) / 3
-		sum := (i + i + 1 + i + 2) / 3 + (j + j + 5 + j + 10) / 3
+		sum := (i+i+1+i+2)/3 + (j+j+5+j+10)/3
 		assert.Exactly(t, sum, value[1])
 		i += 3
 		j += 15
@@ -1529,19 +1522,19 @@ func TestPointsV2MergeSumEnabledAvgMinAproxMax(t *testing.T) {
 		"end": 1448458150000
 	}`
 
-	payloadPoints := postPointsAndCheck(t, payload, ksMycenae + "|merged:[" + nameTS + "]", 200, 15, 180, 15)
+	payloadPoints := postPointsAndCheck(t, payload, ksMycenae+"|merged:["+nameTS+"]", 200, 15, 180, 15)
 
 	i := 0.0
 	j := 0.0
 	dateStart := 1448452890000.0
-	for _, value := range payloadPoints.Payload[ksMycenae + "|merged:[" + nameTS + "]"].Points.Ts {
+	for _, value := range payloadPoints.Payload[ksMycenae+"|merged:["+nameTS+"]"].Points.Ts {
 
 		//sum1 := ((i + j) + (i + 1 + j + 5) + (i + 2 + j + 10)) / 3
-		sum1 := (i + i + 1 + i + 2) / 3 + (j + j + 5 + j + 10) / 3
+		sum1 := (i+i+1+i+2)/3 + (j+j+5+j+10)/3
 		i += 3
 		j += 15
 		//sum2 := ((i + j) + (i + 1 + j + 5) + (i + 2 + j + 10)) / 3
-		sum2 := (i + i + 1 + i + 2) / 3 + (j + j + 5 + j + 10) / 3
+		sum2 := (i+i+1+i+2)/3 + (j+j+5+j+10)/3
 		i += 3
 		j += 15
 
@@ -1582,12 +1575,12 @@ func TestPointsV2MergeSumEnabledSumMinAproxMin(t *testing.T) {
 		"end": 1448458150000
 	}`
 
-	payloadPoints := postPointsAndCheck(t, payload, ksMycenae + "|merged:[" + nameTS + "]", 200, 30, 180, 30)
+	payloadPoints := postPointsAndCheck(t, payload, ksMycenae+"|merged:["+nameTS+"]", 200, 30, 180, 30)
 
 	i := 0.0
 	j := 0.0
 	dateStart := 1448452800000.0
-	for _, value := range payloadPoints.Payload[ksMycenae + "|merged:[" + nameTS + "]"].Points.Ts {
+	for _, value := range payloadPoints.Payload[ksMycenae+"|merged:["+nameTS+"]"].Points.Ts {
 
 		//sum := (i + j) + (i + 1 + j + 5) + (i + 2 + j + 10)
 		sum := (i + i + 1 + i + 2) + (j + j + 5 + j + 10)
@@ -1628,12 +1621,12 @@ func TestPointsV2MergeSumEnabledSumMinAproxMax(t *testing.T) {
 		"end": 1448458150000
 	}`
 
-	payloadPoints := postPointsAndCheck(t, payload, ksMycenae + "|merged:[" + nameTS + "]", 200, 15, 180, 15)
+	payloadPoints := postPointsAndCheck(t, payload, ksMycenae+"|merged:["+nameTS+"]", 200, 15, 180, 15)
 
 	i := 0.0
 	j := 0.0
 	dateStart := 1448452890000.0
-	for _, value := range payloadPoints.Payload[ksMycenae + "|merged:[" + nameTS + "]"].Points.Ts {
+	for _, value := range payloadPoints.Payload[ksMycenae+"|merged:["+nameTS+"]"].Points.Ts {
 
 		//sum1 := (i + j) + (i + 1 + j + 5) + (i + 2 + j + 10)
 		sum1 := (i + i + 1 + i + 2) + (j + j + 5 + j + 10)
@@ -1670,12 +1663,12 @@ func TestPointsV2MergeTimeDiff(t *testing.T) {
 		"end": 1448458770000
 	}`
 
-	payloadPoints := postPointsAndCheck(t, payload, ksMycenae + "|merged:[" + nameTS + "]", 200, 200, 200, 200)
+	payloadPoints := postPointsAndCheck(t, payload, ksMycenae+"|merged:["+nameTS+"]", 200, 200, 200, 200)
 
 	i := 0.0
 	dateStart := 1448452800000.0
 	count := 0.0
-	for _, value := range payloadPoints.Payload[ksMycenae + "|merged:[" + nameTS + "]"].Points.Ts {
+	for _, value := range payloadPoints.Payload[ksMycenae+"|merged:["+nameTS+"]"].Points.Ts {
 
 		assert.Exactly(t, i, value[1])
 		count++
@@ -1715,12 +1708,12 @@ func TestPointsV2MergeTimeDiffDownsampleExactBeginAndEnd(t *testing.T) {
 		"end": 1448458770000
 	}`
 
-	payloadPoints := postPointsAndCheck(t, payload, ksMycenae + "|merged:[" + nameTS + "]", 200, 34, 200, 34)
+	payloadPoints := postPointsAndCheck(t, payload, ksMycenae+"|merged:["+nameTS+"]", 200, 34, 200, 34)
 
 	i := 6.0
 	dateStart := 1448452800000.0
 	count := 0
-	for _, value := range payloadPoints.Payload[ksMycenae + "|merged:[" + nameTS + "]"].Points.Ts {
+	for _, value := range payloadPoints.Payload[ksMycenae+"|merged:["+nameTS+"]"].Points.Ts {
 
 		if int64(value[0].(float64)) < 1448458740000 {
 
@@ -1763,11 +1756,11 @@ func TestPointsV2MergeTimeDiffDownsample(t *testing.T) {
 		"end": 1448458740000
 	}`
 
-	payloadPoints := postPointsAndCheck(t, payload, ksMycenae + "|merged:[" + nameTS + "]", 200, 34, 198, 34)
+	payloadPoints := postPointsAndCheck(t, payload, ksMycenae+"|merged:["+nameTS+"]", 200, 34, 198, 34)
 
 	i := 0.0
 	dateStart := 1448452800000.0
-	for _, value := range payloadPoints.Payload[ksMycenae + "|merged:[" + nameTS + "]"].Points.Ts {
+	for _, value := range payloadPoints.Payload[ksMycenae+"|merged:["+nameTS+"]"].Points.Ts {
 
 		if int64(value[0].(float64)) == 1448452800000 {
 			assert.Exactly(t, 1.0, value[1])
@@ -1778,7 +1771,7 @@ func TestPointsV2MergeTimeDiffDownsample(t *testing.T) {
 			i += 3
 
 		} else {
-			assert.Exactly(t, i + i, value[1])
+			assert.Exactly(t, i+i, value[1])
 			i += 3
 		}
 
@@ -1839,11 +1832,11 @@ func TestPointsV2NullValueMerge(t *testing.T) {
 		"end": 1448458150000
 	}`
 
-	payloadPoints := postPointsAndCheck(t, payload, ksMycenae + "|merged:[" + nameTS + "]", 200, 90, 120, 90)
+	payloadPoints := postPointsAndCheck(t, payload, ksMycenae+"|merged:["+nameTS+"]", 200, 90, 120, 90)
 
 	i := 0.0
 	j := 0.0
-	for _, value := range payloadPoints.Payload[ksMycenae + "|merged:[" + nameTS + "]"].Points.Ts {
+	for _, value := range payloadPoints.Payload[ksMycenae+"|merged:["+nameTS+"]"].Points.Ts {
 
 		if i < 15 || i >= 75 {
 			sum := i + j
@@ -1876,11 +1869,11 @@ func TestPointsV2BothValuesNullMerge(t *testing.T) {
 		"end": 1448458150000
 	}`
 
-	payloadPoints := postPointsAndCheck(t, payload, ksMycenae + "|merged:[" + nameTS + "]", 200, 30, 60, 30)
+	payloadPoints := postPointsAndCheck(t, payload, ksMycenae+"|merged:["+nameTS+"]", 200, 30, 60, 30)
 
 	i := 0.0
 	j := 0.0
-	for _, value := range payloadPoints.Payload[ksMycenae + "|merged:[" + nameTS + "]"].Points.Ts {
+	for _, value := range payloadPoints.Payload[ksMycenae+"|merged:["+nameTS+"]"].Points.Ts {
 
 		if i < 15 {
 			sum := i + j
@@ -1928,7 +1921,7 @@ func TestPointsV2BothValuesNullMergeAndDownsample(t *testing.T) {
 		"end": 1448458150000
 	}`
 
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/points", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/points", []byte(payload))
 	if err != nil {
 		t.Error(err)
 		t.SkipNow()
@@ -1942,13 +1935,13 @@ func TestPointsV2BothValuesNullMergeAndDownsample(t *testing.T) {
 	}
 
 	assert.Equal(t, 200, code)
-	assert.Equal(t, 30, payloadPoints.Payload[ksMycenae + "|merged:[" + nameTS + "]"].Points.Count)
-	assert.Equal(t, 60, payloadPoints.Payload[ksMycenae + "|merged:[" + nameTS + "]"].Points.Total)
-	assert.Equal(t, 30, len(payloadPoints.Payload[ksMycenae + "|merged:[" + nameTS + "]"].Points.Ts))
+	assert.Equal(t, 30, payloadPoints.Payload[ksMycenae+"|merged:["+nameTS+"]"].Points.Count)
+	assert.Equal(t, 60, payloadPoints.Payload[ksMycenae+"|merged:["+nameTS+"]"].Points.Total)
+	assert.Equal(t, 30, len(payloadPoints.Payload[ksMycenae+"|merged:["+nameTS+"]"].Points.Ts))
 
 	i := 0.0
 	j := 0.0
-	for _, value := range payloadPoints.Payload[ksMycenae + "|merged:[" + nameTS + "]"].Points.Ts {
+	for _, value := range payloadPoints.Payload[ksMycenae+"|merged:["+nameTS+"]"].Points.Ts {
 
 		if i < 15 || i >= 75 {
 			sum := i + 2 + j + 2
@@ -1989,11 +1982,11 @@ func TestPointsV2NullValueMergeEnabled3Min(t *testing.T) {
 		"end": 1448458150000
 	}`
 
-	payloadPoints := postPointsAndCheck(t, payload, ksMycenae + "|merged:[" + nameTS + "]", 200, 30, 120, 30)
+	payloadPoints := postPointsAndCheck(t, payload, ksMycenae+"|merged:["+nameTS+"]", 200, 30, 120, 30)
 
 	i := 0.0
 	j := 0.0
-	for _, value := range payloadPoints.Payload[ksMycenae + "|merged:[" + nameTS + "]"].Points.Ts {
+	for _, value := range payloadPoints.Payload[ksMycenae+"|merged:["+nameTS+"]"].Points.Ts {
 
 		if i < 15 || i >= 75 {
 			sum := (i + i + 1 + i + 2) + (j + j + 1 + j + 2)
@@ -2044,11 +2037,11 @@ func TestPointsV22Merge(t *testing.T) {
 		"end": 1448458150000
 	}`
 
-	payloadPoints := postPointsAndCheck(t, payload, ksMycenae + "|merged:[" + nameTS1 + "]", 200, 30, 120, 30)
+	payloadPoints := postPointsAndCheck(t, payload, ksMycenae+"|merged:["+nameTS1+"]", 200, 30, 120, 30)
 
 	i := 0.0
 	j := 0.0
-	for _, value := range payloadPoints.Payload[ksMycenae + "|merged:[" + nameTS1 + "]"].Points.Ts {
+	for _, value := range payloadPoints.Payload[ksMycenae+"|merged:["+nameTS1+"]"].Points.Ts {
 
 		if i < 15 || i >= 75 {
 			//sum := i + j
@@ -2066,13 +2059,13 @@ func TestPointsV22Merge(t *testing.T) {
 
 	}
 
-	assert.Equal(t, 30, payloadPoints.Payload[ksMycenae + "|merged:[" + nameTS2 + "]"].Points.Count)
-	assert.Equal(t, 120, payloadPoints.Payload[ksMycenae + "|merged:[" + nameTS2 + "]"].Points.Total)
-	assert.Equal(t, 30, len(payloadPoints.Payload[ksMycenae + "|merged:[" + nameTS2 + "]"].Points.Ts))
+	assert.Equal(t, 30, payloadPoints.Payload[ksMycenae+"|merged:["+nameTS2+"]"].Points.Count)
+	assert.Equal(t, 120, payloadPoints.Payload[ksMycenae+"|merged:["+nameTS2+"]"].Points.Total)
+	assert.Equal(t, 30, len(payloadPoints.Payload[ksMycenae+"|merged:["+nameTS2+"]"].Points.Ts))
 
 	i = 0.0
 	j = 0.0
-	for _, value := range payloadPoints.Payload[ksMycenae + "|merged:[" + nameTS2 + "]"].Points.Ts {
+	for _, value := range payloadPoints.Payload[ksMycenae+"|merged:["+nameTS2+"]"].Points.Ts {
 
 		if i < 15 || i >= 75 {
 			//sum := i + j
@@ -2099,7 +2092,7 @@ func TestPointsV2MoreThanOneTS(t *testing.T) {
 		"end": 1548452700
 	}`
 
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/points", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/points", []byte(payload))
 	assert.Equal(t, 200, code)
 
 	if err != nil {

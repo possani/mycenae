@@ -7,13 +7,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/uol/mycenae/tests/tools"
 )
-
-type TSDBCheckError struct {
-	Error     string `json:"error,omitempty"`
-	Message   string `json:"message,omitempty"`
-	RequestID string `json:"requestID,omitempty"`
-}
 
 func TestCheckValidQuery(t *testing.T) {
 	cases := map[string]string{
@@ -73,7 +68,7 @@ func TestCheckValidQuery(t *testing.T) {
 
 		statusCode, resp, _ := mycenaeTools.HTTP.GET(fmt.Sprintf(`expression/check?exp=%v`, url.QueryEscape(query)))
 		assert.Equal(t, 200, statusCode, test)
-		assert.Equal(t, "", string(resp), "It should be empty", test)
+		assert.Empty(t, resp, test)
 	}
 }
 
@@ -352,7 +347,7 @@ func TestCheckInvalidQuery(t *testing.T) {
 		statusCode, resp, _ := mycenaeTools.HTTP.GET(fmt.Sprintf(`expression/check?exp=%v`, url.QueryEscape(data.expression)))
 		assert.Equal(t, 400, statusCode, test)
 
-		compare := TSDBCheckError{}
+		compare := tools.Error{}
 
 		err := json.Unmarshal(resp, &compare)
 		if err != nil {
@@ -360,8 +355,8 @@ func TestCheckInvalidQuery(t *testing.T) {
 			t.SkipNow()
 		}
 
-		assert.Equal(t, data.msg, compare.Message, "response is different than expected", test)
-		assert.Equal(t, data.err, compare.Error, "response is different than expected", test)
+		assert.Equal(t, data.msg, compare.Message, test)
+		assert.Equal(t, data.err, compare.Error, test)
 	}
 }
 
@@ -370,7 +365,7 @@ func TestCheckQueryExpressionNotSent(t *testing.T) {
 	statusCode, resp, _ := mycenaeTools.HTTP.GET(fmt.Sprintf(`keyspaces/%v/expression/expand`, ksMycenae))
 	assert.Equal(t, 400, statusCode)
 
-	compare := TSDBCheckError{}
+	compare := tools.Error{}
 	err := json.Unmarshal(resp, &compare)
 
 	if err != nil {
@@ -378,8 +373,8 @@ func TestCheckQueryExpressionNotSent(t *testing.T) {
 		t.SkipNow()
 	}
 
-	assert.Equal(t, "no expression found", compare.Error, "response is different than expected")
-	assert.Equal(t, "no expression found", compare.Message, "response is different than expected")
+	assert.Equal(t, "no expression found", compare.Error)
+	assert.Equal(t, "no expression found", compare.Message)
 }
 
 func TestCheckInvalidQueryGroupByKeyspaceNotFound(t *testing.T) {

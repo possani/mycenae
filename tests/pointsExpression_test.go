@@ -12,39 +12,8 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/uol/mycenae/tests/tools"
 )
-
-type basicResponseTsdbExpression struct {
-	TotalRecord int                        `json:"totalRecords"`
-	Payload     []TsMetaInfoTsdbExpression `json:"payload"`
-}
-
-type TsMetaInfoTsdbExpression struct {
-	TsID   string            `json:"id"`
-	Metric string            `json:"metric,omitempty"`
-	Tags   map[string]string `json:"tags,omitempty"`
-}
-
-type PointTsdbExpression struct {
-	Value     float64           `json:"value"`
-	Metric    string            `json:"metric"`
-	Tags      map[string]string `json:"tags"`
-	Timestamp int64             `json:"timestamp"`
-}
-
-type PayloadTsdbExpression struct {
-	Metric  string             `json:"metric"`
-	Tags    map[string]string  `json:"tags"`
-	AggTags []string           `json:"aggregateTags"`
-	Tsuuids []string           `json:"tsuids"`
-	Dps     map[string]float64 `json:"dps"`
-}
-
-type ExpressionPointsError struct {
-	Error     string `json:"error,omitempty"`
-	Message   string `json:"message,omitempty"`
-	RequestID string `json:"requestID,omitempty"`
-}
 
 func sendPointsExpression(msg string, points interface{}) {
 
@@ -72,10 +41,10 @@ func ts1TsdbExpression(startTime int) (string, string) {
 	ts01tsdbexpression := fmt.Sprintf("ts01tsdb.expression-%d-%d", rand.Int(), startTime)
 	value := 0.0
 	const numTotal int = 100
-	Points := [numTotal]PointTsdbExpression{}
+	Points := [numTotal]tools.Point{}
 
 	for i := 0; i < numTotal; i++ {
-		Points[i].Value = value
+		Points[i].Value = float32(value)
 		Points[i].Metric = ts01tsdbexpression
 		Points[i].Tags = map[string]string{
 			"ksid": ksMycenae,
@@ -106,10 +75,10 @@ func ts1_1TsdbExpression(startTime int) (string, string, string) {
 	ts01_1tsdbexpression := fmt.Sprint("ts01_1tsdb.expression-", startTime)
 	value := 0.0
 	const numTotal int = 100
-	Points := [numTotal]PointTsdbExpression{}
+	Points := [numTotal]tools.Point{}
 
 	for i := 0; i < numTotal; i++ {
-		Points[i].Value = value
+		Points[i].Value = float32(value)
 		Points[i].Metric = ts01_1tsdbexpression
 		Points[i].Tags = map[string]string{
 			"ksid": ksMycenae,
@@ -127,10 +96,10 @@ func ts1_1TsdbExpression(startTime int) (string, string, string) {
 	//startTime = 1448452800
 	dateStart = startTime
 	value = 0.0
-	Points = [numTotal]PointTsdbExpression{}
+	Points = [numTotal]tools.Point{}
 
 	for i := 0; i < numTotal; i++ {
-		Points[i].Value = value
+		Points[i].Value = float32(value)
 		Points[i].Metric = ts01_1tsdbexpression
 		Points[i].Tags = map[string]string{
 			"ksid": ksMycenae,
@@ -158,10 +127,10 @@ func ts2TsdbExpression(startTime int) (string, string) {
 	value := 0.0
 	const numTotal int = 90
 	ts02tsdbexpression := fmt.Sprintf("ts02tsdb.expression-%d-%d", rand.Int(), startTime)
-	Points := [numTotal]PointTsdbExpression{}
+	Points := [numTotal]tools.Point{}
 
 	for i := 0; i < numTotal; i++ {
-		Points[i].Value = value
+		Points[i].Value = float32(value)
 		Points[i].Metric = ts02tsdbexpression
 		Points[i].Tags = map[string]string{
 			"ksid": ksMycenae,
@@ -170,7 +139,7 @@ func ts2TsdbExpression(startTime int) (string, string) {
 		Points[i].Timestamp = int64(startTime)
 		startTime += 60
 		i++
-		Points[i].Value = value + 1.0
+		Points[i].Value = float32(value + 1.0)
 		Points[i].Metric = ts02tsdbexpression
 		Points[i].Tags = map[string]string{
 			"ksid": ksMycenae,
@@ -179,7 +148,7 @@ func ts2TsdbExpression(startTime int) (string, string) {
 		Points[i].Timestamp = int64(startTime)
 		i++
 		startTime += 60
-		Points[i].Value = value + 2.0
+		Points[i].Value = float32(value + 2.0)
 		Points[i].Metric = ts02tsdbexpression
 		Points[i].Tags = map[string]string{
 			"ksid": ksMycenae,
@@ -209,10 +178,10 @@ func ts3TsdbExpression(startTime int) (string, string) {
 	value := 0.0
 
 	const numTotal int = 480
-	Points := [numTotal]PointTsdbExpression{}
+	Points := [numTotal]tools.Point{}
 
 	for i := 0; i < numTotal; i++ {
-		Points[i].Value = value
+		Points[i].Value = float32(value)
 		Points[i].Metric = ts03tsdbexpression
 		Points[i].Tags = map[string]string{
 			"ksid": ksMycenae,
@@ -242,10 +211,10 @@ func ts4TsdbExpression(startTime int) (string, string) {
 	value := 0.0
 
 	const numTotal int = 208
-	Points := [numTotal]PointTsdbExpression{}
+	Points := [numTotal]tools.Point{}
 
 	for i := 0; i < numTotal; i++ {
-		Points[i].Value = value
+		Points[i].Value = float32(value)
 		Points[i].Metric = ts04tsdbexpression
 		Points[i].Tags = map[string]string{
 			"ksid": ksMycenae,
@@ -263,7 +232,7 @@ func ts4TsdbExpression(startTime int) (string, string) {
 	return ts04tsdbexpression, ts4IDTsdbExpression
 }
 
-func postExpressionAndCheck(t *testing.T, expression, metric string, p, dps, tags, aggtags, tsuuidSize int) ([]PayloadTsdbExpression, []string) {
+func postExpressionAndCheck(t *testing.T, expression, metric string, p, dps, tags, aggtags, tsuuidSize int) ([]tools.ResponseQuery, []string) {
 
 	path := fmt.Sprintf("keyspaces/%s/query/expression?tsuid=true&exp=%s", ksMycenae, expression)
 	code, response, err := mycenaeTools.HTTP.GET(path)
@@ -274,7 +243,7 @@ func postExpressionAndCheck(t *testing.T, expression, metric string, p, dps, tag
 
 	assert.Equal(t, 200, code)
 
-	queryPoints := []PayloadTsdbExpression{}
+	queryPoints := []tools.ResponseQuery{}
 
 	err = json.Unmarshal(response, &queryPoints)
 	if err != nil {
@@ -384,7 +353,7 @@ func TestTsdbExpressionFilterDownsampleAvg(t *testing.T) {
 	offset := "90m"
 	// if the test is run during a minute change,
 	// increment a minute in the relative time (offset) to get the first point
-	if int(time.Now().Truncate(time.Minute).Unix() - 5400) - startTime == 60 {
+	if int(time.Now().Truncate(time.Minute).Unix()-5400)-startTime == 60 {
 		offset = "91m"
 	}
 
@@ -420,7 +389,7 @@ func TestTsdbExpressionFilterDownsampleMin(t *testing.T) {
 	offset := "90m"
 	// if the test is run during a minute change,
 	// increment a minute in the relative time (offset) to get the first point
-	if int(time.Now().Truncate(time.Minute).Unix() - 5400) - startTime == 60 {
+	if int(time.Now().Truncate(time.Minute).Unix()-5400)-startTime == 60 {
 		offset = "91m"
 	}
 
@@ -454,7 +423,7 @@ func TestTsdbExpressionFilterDownsampleMax(t *testing.T) {
 	offset := "90m"
 	// if the test is run during a minute change,
 	// increment a minute in the relative time (offset) to get the first point
-	if int(time.Now().Truncate(time.Minute).Unix() - 5400) - startTime == 60 {
+	if int(time.Now().Truncate(time.Minute).Unix()-5400)-startTime == 60 {
 		offset = "91m"
 	}
 
@@ -485,7 +454,7 @@ func TestTsdbExpressionFilterDownsampleSum(t *testing.T) {
 	offset := "90m"
 	// if the test is run during a minute change,
 	// increment a minute in the relative time (offset) to get the first point
-	if int(time.Now().Truncate(time.Minute).Unix() - 5400) - startTime == 60 {
+	if int(time.Now().Truncate(time.Minute).Unix()-5400)-startTime == 60 {
 		offset = "91m"
 	}
 
@@ -536,7 +505,7 @@ func TestTsdbExpressionFilterDownsampleMaxHour(t *testing.T) {
 
 func TestTsdbExpressionFilterDownsampleMaxDay(t *testing.T) {
 	t.Parallel()
-	startTime := int(time.Now().Truncate(time.Hour * 24).Unix()) - 864000
+	startTime := int(time.Now().Truncate(time.Hour*24).Unix()) - 864000
 
 	metric, tsid := ts3TsdbExpression(startTime)
 
@@ -563,7 +532,7 @@ func TestTsdbExpressionFilterDownsampleMaxDay(t *testing.T) {
 
 func TestTsdbExpressionFilterDownsampleMaxWeek(t *testing.T) {
 	t.Parallel()
-	startTime := int(time.Now().Truncate(time.Hour * 24 * 7).Unix()) - 125193600
+	startTime := int(time.Now().Truncate(time.Hour*24*7).Unix()) - 125193600
 
 	metric, tsid := ts4TsdbExpression(startTime)
 
@@ -622,7 +591,7 @@ func TestTsdbExpressionMergeDateLimit(t *testing.T) {
 
 	for _, key := range keys {
 
-		assert.Exactly(t, i + i, queryPoints[0].Dps[key])
+		assert.Exactly(t, i+i, queryPoints[0].Dps[key])
 		assert.Exactly(t, strconv.Itoa(startTime), key)
 		startTime += 60
 		i++
@@ -670,7 +639,7 @@ func TestTsdbExpressionError(t *testing.T) {
 			t.SkipNow()
 		}
 
-		queryError := ExpressionPointsError{}
+		queryError := tools.Error{}
 
 		err = json.Unmarshal(response, &queryError)
 		if err != nil {

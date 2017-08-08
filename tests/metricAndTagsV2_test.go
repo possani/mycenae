@@ -6,14 +6,8 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-
 	"github.com/uol/mycenae/tests/tools"
 )
-
-type Response struct {
-	TotalRec int      `json:"totalRecords,omitempty"`
-	Payload  []string `json:"payload,omitempty"`
-}
 
 // HELPERS
 
@@ -32,9 +26,9 @@ func postPoints(payload interface{}, text bool, t *testing.T) {
 	time.Sleep(waitREST)
 }
 
-func getResponse(path string, total, length int, t *testing.T) Response {
+func getResponse(path string, total, length int, t *testing.T) tools.ResponseMetricTags {
 
-	resp := Response{}
+	resp := tools.ResponseMetricTags{}
 	statusCode := mycenaeTools.HTTP.GETjson(fmt.Sprintf("keyspaces/%v/%v", ksMycenae, path), &resp)
 
 	assert.Equal(t, 200, statusCode)

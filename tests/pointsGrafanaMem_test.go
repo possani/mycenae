@@ -10,69 +10,12 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/uol/mycenae/tests/tools"
 )
 
-type PayloadTsdbQueryMemMeta struct {
-	info TsMetaInfoTsdbQueryMem
-}
-
-type basicResponseTsdbQueryMem struct {
-	TotalRecord int                      `json:"totalRecords"`
-	Payload     []TsMetaInfoTsdbQueryMem `json:"payload"`
-}
-
-type TsMetaInfoTsdbQueryMem struct {
-	TsID   string            `json:"id"`
-	Metric string            `json:"metric,omitempty"`
-	Tags   map[string]string `json:"tags,omitempty"`
-}
-
-type PointsTsdbQueryMem struct {
-	Data DataTsdbQueryMem `json:"points"`
-}
-
-type DataTsdbQueryMem struct {
-	Count int         `json:"count"`
-	Total int         `json:"total"`
-	Ts    [][]float32 `json:"ts"`
-}
-
-type PayloadPointsTsdbQueryMem struct {
-	ID map[string]PointsTsdbQueryMem `json:"payload"`
-}
-
-type PointTsdbQueryMem struct {
-	Value     float32           `json:"value"`
-	Metric    string            `json:"metric"`
-	Tags      map[string]string `json:"tags"`
-	Timestamp int64             `json:"timestamp"`
-}
-
-type PayloadTsdbQueryMem struct {
-	Metric  string             `json:"metric"`
-	Tags    map[string]string  `json:"tags"`
-	AggTags []string           `json:"aggregateTags"`
-	Tsuuids []string           `json:"tsuids"`
-	Dps     map[string]float32 `json:"dps"`
-}
-
-type PayloadTsdbNullQueryMem struct {
-	Metric  string                 `json:"metric"`
-	Tags    map[string]string      `json:"tags"`
-	AggTags []string               `json:"aggregateTags"`
-	Tsuuids []string               `json:"tsuids"`
-	Dps     map[string]interface{} `json:"dps"`
-}
-
-type GrafanaPointsErrorMem struct {
-	Error     string `json:"error,omitempty"`
-	Message   string `json:"message,omitempty"`
-	RequestID string `json:"requestID,omitempty"`
-}
-
 var ts10IDTsdbQueryMem, ts10_1IDTsdbQueryMem, ts12IDTsdbQueryMem, ts13IDTsdbQueryMem,
-ts13IDTsdbQueryMem2, ts13IDTsdbQueryMem3, ts13IDTsdbQueryMem4, ts13IDTsdbQueryMem5,
-ts13IDTsdbQueryMem6, ts13IDTsdbQueryMem7, ts13IDTsdbQueryMem8 string
+	ts13IDTsdbQueryMem2, ts13IDTsdbQueryMem3, ts13IDTsdbQueryMem4, ts13IDTsdbQueryMem5,
+	ts13IDTsdbQueryMem6, ts13IDTsdbQueryMem7, ts13IDTsdbQueryMem8 string
 
 var ts12TsdbQueryMemStartTime, ts13TsdbQueryMemStartTime int64
 
@@ -132,7 +75,7 @@ func tsInsertMem(keyspace string) {
 
 	for test, data := range cases {
 
-		Points := make([]PointTsdbQueryMem, data.numTotal)
+		Points := make([]tools.Point, data.numTotal)
 
 		hashMapStartTime[test] = data.startTime
 
@@ -165,7 +108,7 @@ func ts10TsdbQueryMem(keyspace string) bool {
 	startTime := hashMapStartTime["ts1TsdbQueryMem"]
 	var value, value2 float32
 	const numTotal int = 75
-	Points := [numTotal]PointTsdbQueryMem{}
+	Points := [numTotal]tools.Point{}
 
 	for i := 0; i < numTotal; i++ {
 		Points[i].Value = value
@@ -239,7 +182,7 @@ func ts12TsdbQueryMem(keyspace string) bool {
 	startTime := ts12TsdbQueryMemStartTime
 	var value float32 = 1.0
 	const numTotal int = 12
-	Points := [numTotal]PointTsdbQueryMem{}
+	Points := [numTotal]tools.Point{}
 
 	for i := 0; i < numTotal; i++ {
 
@@ -324,7 +267,7 @@ func ts13TsdbQueryMem(keyspace string) bool {
 	var value float32 = 1.0
 
 	const numTotal int = 40
-	Points := [numTotal]PointTsdbQueryMem{}
+	Points := [numTotal]tools.Point{}
 
 	for i := 0; i < numTotal; i++ {
 		Points[i].Value = value
@@ -374,7 +317,7 @@ func ts13TsdbQueryMem(keyspace string) bool {
 	startTime = ts13TsdbQueryMemStartTime
 	value = 1.0
 
-	Points = [numTotal]PointTsdbQueryMem{}
+	Points = [numTotal]tools.Point{}
 
 	for i := 0; i < numTotal; i++ {
 		Points[i].Value = value * 3
@@ -422,7 +365,7 @@ func ts13TsdbQueryMem(keyspace string) bool {
 	startTime = ts13TsdbQueryMemStartTime
 	value = 1.0
 
-	Points = [numTotal]PointTsdbQueryMem{}
+	Points = [numTotal]tools.Point{}
 
 	for i := 0; i < numTotal; i++ {
 		Points[i].Value = value * 5
@@ -471,7 +414,7 @@ func ts13TsdbQueryMem(keyspace string) bool {
 	//time.Sleep(2 * time.Second)
 	tagValue3 = "type4"
 	tagValue5 := "type5"
-	Points = [numTotal]PointTsdbQueryMem{}
+	Points = [numTotal]tools.Point{}
 
 	for i := 0; i < numTotal; i++ {
 		Points[i].Value = value * 7
@@ -529,7 +472,7 @@ func ts16TsdbQueryMem(keyspace string) {
 		go func(i int, startTime int64) {
 
 			start.Wait()
-			sendPointsGrafana("ts16TsdbQueryMem", []PointTsdbQueryMem{
+			sendPointsGrafana("ts16TsdbQueryMem", []tools.Point{
 				{
 					Value:  float32(i),
 					Metric: "ts16tsdbmem",
@@ -576,7 +519,7 @@ func ts17TsdbQueryMem(keyspace string) {
 	startTime := time.Now().Truncate(time.Hour).Unix()
 	hashMapStartTime["ts17TsdbQueryMem"] = startTime
 
-	sendPointsGrafana("ts17TsdbQueryMem", []PointTsdbQueryMem{
+	sendPointsGrafana("ts17TsdbQueryMem", []tools.Point{
 		{
 			Value:  float32(0),
 			Metric: "ts17tsdbmem",
@@ -613,7 +556,7 @@ func ts17bTsdbQueryMem(keyspace string) {
 
 	startTime := hashMapStartTime["ts17TsdbQueryMem"] + 7200
 
-	sendPointsGrafana("ts17bTsdbQueryMem", []PointTsdbQueryMem{
+	sendPointsGrafana("ts17bTsdbQueryMem", []tools.Point{
 		{
 			Value:  float32(3),
 			Metric: "ts17tsdbmem",
@@ -660,7 +603,7 @@ func sendPointsPointsGrafanaMem(keyspace string) {
 	ts17TsdbQueryMem(keyspace)
 }
 
-func postAPIQueryAndCheckMem(t *testing.T, payload string, metric string, p, dps, tags, aggtags, tsuuidSize int, tsuuids ...string) ([]string, []PayloadTsdbQueryMem) {
+func postAPIQueryAndCheckMem(t *testing.T, payload string, metric string, p, dps, tags, aggtags, tsuuidSize int, tsuuids ...string) ([]string, []tools.ResponseQuery) {
 
 	path := fmt.Sprintf("keyspaces/%s/api/query", ksMycenae)
 	code, response, err := mycenaeTools.HTTP.POST(path, []byte(payload))
@@ -669,7 +612,7 @@ func postAPIQueryAndCheckMem(t *testing.T, payload string, metric string, p, dps
 		t.SkipNow()
 	}
 
-	payloadPoints := []PayloadTsdbQueryMem{}
+	payloadPoints := []tools.ResponseQuery{}
 	err = json.Unmarshal(response, &payloadPoints)
 	if err != nil {
 		t.Error(err, string(response))
@@ -731,7 +674,7 @@ func TestTsdbQueryMemFilter(t *testing.T) {
 	dateStart := hashMapStartTime["ts1TsdbQueryMem"]
 	for _, key := range keys {
 
-		assert.Exactly(t, i, payloadPoints[0].Dps[key])
+		assert.Exactly(t, i, float32(payloadPoints[0].Dps[key].(float64)))
 		assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 		dateStart = dateStart + 60
 		i++
@@ -763,7 +706,7 @@ func TestTsdbQueryMemFilterNoTsuids(t *testing.T) {
 	dateStart := hashMapStartTime["ts1TsdbQueryMem"]
 	for _, key := range keys {
 
-		assert.Exactly(t, i, payloadPoints[0].Dps[key])
+		assert.Exactly(t, i, float32(payloadPoints[0].Dps[key].(float64)))
 		assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 		dateStart = dateStart + 60
 		i++
@@ -796,7 +739,7 @@ func TestTsdbQueryMemFilterMsResolution(t *testing.T) {
 	dateStart := hashMapStartTime["ts1TsdbQueryMem"] * 1000
 	for _, key := range keys {
 
-		assert.Exactly(t, i, payloadPoints[0].Dps[key])
+		assert.Exactly(t, i, float32(payloadPoints[0].Dps[key].(float64)))
 		assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 		dateStart = dateStart + 60000
 		i++
@@ -832,7 +775,7 @@ func TestTsdbQueryMemFilterDownsampleAvg(t *testing.T) {
 	for _, key := range keys {
 
 		media = (i + i + 1 + i + 2) / 3
-		assert.Exactly(t, media, payloadPoints[0].Dps[key])
+		assert.Exactly(t, media, float32(payloadPoints[0].Dps[key].(float64)))
 		assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 		dateStart = dateStart + 180
 		i++
@@ -865,7 +808,7 @@ func TestTsdbQueryMemFilterDownsampleSec(t *testing.T) {
 	dateStart := hashMapStartTime["ts2TsdbQueryMem"]
 	for _, key := range keys {
 
-		assert.Exactly(t, i, payloadPoints[0].Dps[key])
+		assert.Exactly(t, i, float32(payloadPoints[0].Dps[key].(float64)))
 		assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 		dateStart = dateStart + 180
 		i++
@@ -897,7 +840,7 @@ func TestTsdbQueryMemFilterDownsampleMin(t *testing.T) {
 	dateStart := hashMapStartTime["ts2TsdbQueryMem"]
 	for _, key := range keys {
 
-		assert.Exactly(t, i, payloadPoints[0].Dps[key])
+		assert.Exactly(t, i, float32(payloadPoints[0].Dps[key].(float64)))
 		assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 		dateStart = dateStart + 180
 		i++
@@ -929,7 +872,7 @@ func TestTsdbQueryMemFilterDownsampleCount(t *testing.T) {
 	dateStart := hashMapStartTime["ts2TsdbQueryMem"]
 	for _, key := range keys {
 
-		assert.Exactly(t, i, payloadPoints[0].Dps[key])
+		assert.Exactly(t, i, float32(payloadPoints[0].Dps[key].(float64)))
 		assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 		dateStart = dateStart + 180
 
@@ -961,7 +904,7 @@ func TestTsdbQueryMemFilterDownsampleMax(t *testing.T) {
 	dateStart := hashMapStartTime["ts2TsdbQueryMem"]
 	for _, key := range keys {
 
-		assert.Exactly(t, i, payloadPoints[0].Dps[key])
+		assert.Exactly(t, i, float32(payloadPoints[0].Dps[key].(float64)))
 		assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 		dateStart = dateStart + 180
 		i++
@@ -996,7 +939,7 @@ func TestTsdbQueryMemFilterDownsampleSum(t *testing.T) {
 	for _, key := range keys {
 
 		sum = i + i + 1 + i + 2
-		assert.Exactly(t, sum, payloadPoints[0].Dps[key])
+		assert.Exactly(t, sum, float32(payloadPoints[0].Dps[key].(float64)))
 		assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 		dateStart = dateStart + 180
 		i++
@@ -1019,14 +962,14 @@ func TestTsdbQueryMemFilterDownsampleCountSec(t *testing.T) {
         		"groupBy": false
 	      	}]
 	    }]
-	}`, hashMapStartTime["ts2TsdbQueryMem"], hashMapStartTime["ts2TsdbQueryMem"] + 5400)
+	}`, hashMapStartTime["ts2TsdbQueryMem"], hashMapStartTime["ts2TsdbQueryMem"]+5400)
 
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/api/query", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/api/query", []byte(payload))
 	if err != nil {
 		t.Error(err)
 		t.SkipNow()
 	}
-	payloadPoints := []PayloadTsdbNullQueryMem{}
+	payloadPoints := []tools.ResponseQuery{}
 
 	err = json.Unmarshal(response, &payloadPoints)
 	if err != nil {
@@ -1061,7 +1004,7 @@ func TestTsdbQueryMemFilterDownsampleCountSec(t *testing.T) {
 	for _, key := range keys {
 
 		if count == 0 {
-			assert.Exactly(t, 1.0, payloadPoints[0].Dps[key])
+			assert.Exactly(t, 1.0, payloadPoints[0].Dps[key].(float64))
 			count = 1
 		} else {
 			assert.Exactly(t, nil, payloadPoints[0].Dps[key])
@@ -1099,7 +1042,7 @@ func TestTsdbQueryMemFilterDownsampleMaxHour(t *testing.T) {
 	dateStart := hashMapStartTime["ts3TsdbQueryMem"]
 	for _, key := range keys {
 
-		assert.Exactly(t, i, payloadPoints[0].Dps[key])
+		assert.Exactly(t, i, float32(payloadPoints[0].Dps[key].(float64)))
 		i += 20.0
 
 		assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
@@ -1140,7 +1083,7 @@ func TestTsdbQueryMemFilterDownsampleMaxHour(t *testing.T) {
 //	fmt.Println(ksMycenae)
 //	fmt.Println(payload)
 //
-//	payloadPoints := []PayloadTsdbQueryMem{}
+//	payloadPoints := []tools.ResponseQuery{}
 //
 //	err = json.Unmarshal(response, &payloadPoints)
 //
@@ -1176,12 +1119,12 @@ func TestTsdbQueryMemFilterDownsampleMaxHour(t *testing.T) {
 //
 //		if int64(date) < (hashMapStartTime["ts3TsdbQueryMem"] - 691200) {
 //
-//			assert.Exactly(t, i, payloadPoints[0].Dps[key])
+//			assert.Exactly(t, i, float32(payloadPoints[0].Dps[key].(float64)))
 //			i += 480.0
 //
 //		} else {
 //
-//			assert.Exactly(t, i, payloadPoints[0].Dps[key])
+//			assert.Exactly(t, i, float32(payloadPoints[0].Dps[key].(float64)))
 //			i += 120.0
 //		}
 //
@@ -1217,7 +1160,7 @@ func TestTsdbQueryMemFilterDownsampleMaxHour(t *testing.T) {
 //		t.SkipNow()
 //	}
 //
-//	payloadPoints := []PayloadTsdbQueryMem{}
+//	payloadPoints := []tools.ResponseQuery{}
 //
 //	err = json.Unmarshal(response, &payloadPoints)
 //
@@ -1249,7 +1192,7 @@ func TestTsdbQueryMemFilterDownsampleMaxHour(t *testing.T) {
 //
 //	for _, key := range keys {
 //
-//		assert.Exactly(t, i, payloadPoints[0].Dps[key])
+//		assert.Exactly(t, i, float32(payloadPoints[0].Dps[key].(float64)))
 //		i += 2.0
 //
 //		date := int(dateStart.Unix())
@@ -1288,7 +1231,7 @@ func TestTsdbQueryMemFilterDownsampleMaxHour(t *testing.T) {
 //		t.SkipNow()
 //	}
 //
-//	payloadPoints := []PayloadTsdbQueryMem{}
+//	payloadPoints := []tools.ResponseQuery{}
 //
 //	err = json.Unmarshal(response, &payloadPoints)
 //
@@ -1324,47 +1267,47 @@ func TestTsdbQueryMemFilterDownsampleMaxHour(t *testing.T) {
 //
 //		if date <= 1501545600 {
 //
-//			assert.Exactly(t, i, payloadPoints[0].Dps[key])
+//			assert.Exactly(t, i, float32(payloadPoints[0].Dps[key].(float64)))
 //			i += 6.5
 //
 //		} else if date == 1509494400 {
 //
 //			i = 57.0
-//			assert.Exactly(t, i, payloadPoints[0].Dps[key])
+//			assert.Exactly(t, i, float32(payloadPoints[0].Dps[key].(float64)))
 //
 //		} else if date == 1517443200 {
 //
 //			i = 63.0
-//			assert.Exactly(t, i, payloadPoints[0].Dps[key])
+//			assert.Exactly(t, i, float32(payloadPoints[0].Dps[key].(float64)))
 //
 //		} else if date == 1525132800 {
 //
 //			i += 6.5
-//			assert.Exactly(t, i, payloadPoints[0].Dps[key])
+//			assert.Exactly(t, i, float32(payloadPoints[0].Dps[key].(float64)))
 //
 //		} else if date == 1533081600 {
 //
 //			i += 7.0
-//			assert.Exactly(t, i, payloadPoints[0].Dps[key])
+//			assert.Exactly(t, i, float32(payloadPoints[0].Dps[key].(float64)))
 //
 //		} else if date <= 1541030400 {
 //
 //			i += 6.5
-//			assert.Exactly(t, i, payloadPoints[0].Dps[key])
+//			assert.Exactly(t, i, float32(payloadPoints[0].Dps[key].(float64)))
 //
 //		} else if date == 1548979200 {
 //
 //			i += 6.0
-//			assert.Exactly(t, i, payloadPoints[0].Dps[key])
+//			assert.Exactly(t, i, float32(payloadPoints[0].Dps[key].(float64)))
 //
 //		} else if date == 1556668800 {
 //
 //			i += 7.0
-//			assert.Exactly(t, i, payloadPoints[0].Dps[key])
+//			assert.Exactly(t, i, float32(payloadPoints[0].Dps[key].(float64)))
 //
 //		} else {
 //			i += 1.5
-//			assert.Exactly(t, i, payloadPoints[0].Dps[key])
+//			assert.Exactly(t, i, float32(payloadPoints[0].Dps[key].(float64)))
 //		}
 //
 //		dateInt := int(dateStart.Unix())
@@ -1403,7 +1346,7 @@ func TestTsdbQueryMemFilterDownsampleMaxHour(t *testing.T) {
 //		t.SkipNow()
 //	}
 //
-//	payloadPoints := []PayloadTsdbQueryMem{}
+//	payloadPoints := []tools.ResponseQuery{}
 //
 //	err = json.Unmarshal(response, &payloadPoints)
 //
@@ -1435,7 +1378,7 @@ func TestTsdbQueryMemFilterDownsampleMaxHour(t *testing.T) {
 //
 //	for _, key := range keys {
 //
-//		assert.Exactly(t, i, payloadPoints[0].Dps[key])
+//		assert.Exactly(t, i, float32(payloadPoints[0].Dps[key].(float64)))
 //		i += 26.0
 //
 //		date := int(dateStart.Unix())
@@ -1478,7 +1421,7 @@ func TestTsdbQueryMemFilterMoreThanOneTS(t *testing.T) {
 	dateStart := hashMapStartTime["ts1TsdbQueryMem"]
 	for _, key := range keys {
 
-		assert.Exactly(t, i, payloadPoints[0].Dps[key])
+		assert.Exactly(t, i, float32(payloadPoints[0].Dps[key].(float64)))
 		assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 		dateStart = dateStart + 60
 		i++
@@ -1504,7 +1447,7 @@ func TestTsdbQueryMemFilterMoreThanOneTS(t *testing.T) {
 	dateStart = hashMapStartTime["ts1TsdbQueryMem"]
 	for _, key := range keys {
 
-		assert.Exactly(t, i, payloadPoints[1].Dps[key])
+		assert.Exactly(t, i, float32(payloadPoints[1].Dps[key].(float64)))
 		assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 		dateStart = dateStart + 60
 		i++
@@ -1515,7 +1458,7 @@ func TestTsdbQueryMemFilterRegexpValidChars(t *testing.T) {
 
 	payload := `{
 		"start": ` + strconv.FormatInt(ts12TsdbQueryMemStartTime, 10) + `,
-		"end": ` + strconv.FormatInt((ts12TsdbQueryMemStartTime + 240), 10) + `,
+		"end": ` + strconv.FormatInt((ts12TsdbQueryMemStartTime+240), 10) + `,
 		"showTSUIDs": true,
 		"queries": [{
     		"metric": "ts12-_/.%&#;tsdb",
@@ -1536,7 +1479,7 @@ func TestTsdbQueryMemFilterRegexpValidChars(t *testing.T) {
 	dateStart := ts12TsdbQueryMemStartTime
 	for _, key := range keys {
 
-		assert.Exactly(t, i, payloadPoints[0].Dps[key])
+		assert.Exactly(t, i, float32(payloadPoints[0].Dps[key].(float64)))
 		assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 		dateStart = dateStart + 60
 
@@ -1548,7 +1491,7 @@ func TestTsdbQueryMemFilterWildcardValidChars(t *testing.T) {
 
 	payload := `{
 		"start": ` + strconv.FormatInt(ts12TsdbQueryMemStartTime, 10) + `,
-		"end": ` + strconv.FormatInt((ts12TsdbQueryMemStartTime + 240), 10) + `,
+		"end": ` + strconv.FormatInt((ts12TsdbQueryMemStartTime+240), 10) + `,
 		"showTSUIDs": true,
 		"queries": [{
     		"metric": "ts12-_/.%&#;tsdb",
@@ -1568,7 +1511,7 @@ func TestTsdbQueryMemFilterWildcardValidChars(t *testing.T) {
 	dateStart := ts12TsdbQueryMemStartTime
 	for _, key := range keys {
 
-		assert.Exactly(t, i, payloadPoints[0].Dps[key])
+		assert.Exactly(t, i, float32(payloadPoints[0].Dps[key].(float64)))
 		assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 		dateStart = dateStart + 60
 
@@ -1580,7 +1523,7 @@ func TestTsdbQueryMemFilterLiteralOrValidChars(t *testing.T) {
 
 	payload := `{
 		"start": ` + strconv.FormatInt(ts12TsdbQueryMemStartTime, 10) + `,
-		"end": ` + strconv.FormatInt((ts12TsdbQueryMemStartTime + 240), 10) + `,
+		"end": ` + strconv.FormatInt((ts12TsdbQueryMemStartTime+240), 10) + `,
 		"showTSUIDs": true,
 		"queries": [{
     		"metric": "ts12-_/.%&#;tsdb",
@@ -1600,7 +1543,7 @@ func TestTsdbQueryMemFilterLiteralOrValidChars(t *testing.T) {
 	dateStart := ts12TsdbQueryMemStartTime
 	for _, key := range keys {
 
-		assert.Exactly(t, i, payloadPoints[0].Dps[key])
+		assert.Exactly(t, i, float32(payloadPoints[0].Dps[key].(float64)))
 		assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 		dateStart = dateStart + 60
 
@@ -1612,7 +1555,7 @@ func TestTsdbQueryMemFilterNotLiteralOrValidChars(t *testing.T) {
 
 	payload := `{
 		"start": ` + strconv.FormatInt(ts12TsdbQueryMemStartTime, 10) + `,
-		"end": ` + strconv.FormatInt(ts12TsdbQueryMemStartTime + 240, 10) + `,
+		"end": ` + strconv.FormatInt(ts12TsdbQueryMemStartTime+240, 10) + `,
 		"showTSUIDs": true,
 		"queries": [{
     		"metric": "ts12-_/.%&#;tsdb",
@@ -1632,7 +1575,7 @@ func TestTsdbQueryMemFilterNotLiteralOrValidChars(t *testing.T) {
 	dateStart := ts12TsdbQueryMemStartTime
 	for _, key := range keys {
 
-		assert.Exactly(t, i, payloadPoints[0].Dps[key])
+		assert.Exactly(t, i, float32(payloadPoints[0].Dps[key].(float64)))
 		assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 		dateStart = dateStart + 60
 
@@ -1666,7 +1609,7 @@ func TestTsdbQueryMemFilterRateTrueRateOptionsFalse(t *testing.T) {
 	for _, key := range keys {
 
 		calc := (((i + 1.0) - i) / (float32((dateStart + 60) - dateStart)))
-		assert.Exactly(t, calc, payloadPoints[0].Dps[key])
+		assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
 
 		dateStart += 60
 		assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
@@ -1679,7 +1622,7 @@ func TestTsdbQueryMemFilterRateTrueRateOptionsTrueCounter(t *testing.T) {
 
 	payload := `{
 		"start": ` + strconv.FormatInt(ts12TsdbQueryMemStartTime, 10) + `,
-		"end": ` + strconv.FormatInt((ts12TsdbQueryMemStartTime + 240), 10) + `,
+		"end": ` + strconv.FormatInt((ts12TsdbQueryMemStartTime+240), 10) + `,
 		"showTSUIDs": true,
 		"queries": [{
     		"metric": "ts12-_/.%&#;tsdb",
@@ -1704,7 +1647,7 @@ func TestTsdbQueryMemFilterRateTrueRateOptionsTrueCounter(t *testing.T) {
 	for _, key := range keys {
 
 		calc := (((i * 10.0) - i) / (float32((dateStart + 60) - dateStart)))
-		assert.Exactly(t, calc, payloadPoints[0].Dps[key])
+		assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
 
 		dateStart = dateStart + 60
 		assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
@@ -1717,7 +1660,7 @@ func TestTsdbQueryMemFilterRateTrueRateOptionsTrueCounterMax(t *testing.T) {
 
 	payload := `{
 		"start": ` + strconv.FormatInt(ts12TsdbQueryMemStartTime, 10) + `,
-		"end": ` + strconv.FormatInt(ts12TsdbQueryMemStartTime + 300, 10) + `,
+		"end": ` + strconv.FormatInt(ts12TsdbQueryMemStartTime+300, 10) + `,
 		"showTSUIDs": true,
 		"queries": [{
     		"metric": "ts12-_/.%&#;tsdb",
@@ -1747,7 +1690,7 @@ func TestTsdbQueryMemFilterRateTrueRateOptionsTrueCounterMax(t *testing.T) {
 		if dateStart < (ts12TsdbQueryMemStartTime + 240) {
 
 			calc := (((i * 10.0) - i) / (float32((dateStart + 60) - dateStart)))
-			assert.Exactly(t, calc, payloadPoints[0].Dps[key])
+			assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
 
 			dateStart += 60
 			assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
@@ -1755,7 +1698,7 @@ func TestTsdbQueryMemFilterRateTrueRateOptionsTrueCounterMax(t *testing.T) {
 			i = i * 10.0
 		} else {
 			calc := ((countermax - i + 1000) / (float32((dateStart + 60) - dateStart)))
-			assert.Exactly(t, calc, payloadPoints[0].Dps[key])
+			assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
 
 			dateStart += 60
 			assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
@@ -1767,7 +1710,7 @@ func TestTsdbQueryMemFilterRateTrueRateOptionsTrueResetValue(t *testing.T) {
 
 	payload := `{
 		"start": ` + strconv.FormatInt(ts12TsdbQueryMemStartTime, 10) + `,
-		"end": ` + strconv.FormatInt(ts12TsdbQueryMemStartTime + 300, 10) + `,
+		"end": ` + strconv.FormatInt(ts12TsdbQueryMemStartTime+300, 10) + `,
 		"showTSUIDs": true,
 		"queries": [{
     		"metric": "ts12-_/.%&#;tsdb",
@@ -1795,7 +1738,7 @@ func TestTsdbQueryMemFilterRateTrueRateOptionsTrueResetValue(t *testing.T) {
 		if dateStart < (ts12TsdbQueryMemStartTime + 240) {
 
 			calc := (((i * 10.0) - i) / (float32((dateStart + 60) - dateStart)))
-			assert.Exactly(t, calc, payloadPoints[0].Dps[key])
+			assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
 
 			dateStart = dateStart + 60
 			assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
@@ -1803,7 +1746,7 @@ func TestTsdbQueryMemFilterRateTrueRateOptionsTrueResetValue(t *testing.T) {
 			i = i * 10.0
 		} else {
 			var calc float32
-			assert.Exactly(t, calc, payloadPoints[0].Dps[key])
+			assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
 
 			dateStart = dateStart + 60
 			assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
@@ -1815,7 +1758,7 @@ func TestTsdbQueryMemFilterRateTrueRateOptionsTrueCounterMaxAndResetValue(t *tes
 
 	payload := `{
 		"start": ` + strconv.FormatInt(ts12TsdbQueryMemStartTime, 10) + `,
-		"end": ` + strconv.FormatInt(ts12TsdbQueryMemStartTime + 720, 10) + `,
+		"end": ` + strconv.FormatInt(ts12TsdbQueryMemStartTime+720, 10) + `,
 		"showTSUIDs": true,
 		"queries": [{
     		"metric": "ts12-_/.%&#;tsdb",
@@ -1845,7 +1788,7 @@ func TestTsdbQueryMemFilterRateTrueRateOptionsTrueCounterMaxAndResetValue(t *tes
 		if dateStart < (ts12TsdbQueryMemStartTime + 240) {
 
 			calc := (((i * 10.0) - i) / (float32((dateStart + 60) - dateStart)))
-			assert.Exactly(t, calc, payloadPoints[0].Dps[key])
+			assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
 
 			dateStart = dateStart + 60
 			assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
@@ -1853,14 +1796,14 @@ func TestTsdbQueryMemFilterRateTrueRateOptionsTrueCounterMaxAndResetValue(t *tes
 			i = i * 10.0
 		} else if dateStart < (ts12TsdbQueryMemStartTime + 300) {
 			calc := ((countermax - i + 1000) / (float32((dateStart + 60) - dateStart)))
-			assert.Exactly(t, calc, payloadPoints[0].Dps[key])
+			assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
 
 			dateStart = dateStart + 60
 			assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 
 		} else if dateStart < (ts12TsdbQueryMemStartTime + 360) {
 			var calc float32
-			assert.Exactly(t, calc, payloadPoints[0].Dps[key])
+			assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
 
 			dateStart = dateStart + 60
 			assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
@@ -1868,7 +1811,7 @@ func TestTsdbQueryMemFilterRateTrueRateOptionsTrueCounterMaxAndResetValue(t *tes
 
 		} else if dateStart < (ts12TsdbQueryMemStartTime + 600) {
 			calc := (((i * 10.0) - i) / (float32((dateStart + 60) - dateStart)))
-			assert.Exactly(t, calc, payloadPoints[0].Dps[key])
+			assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
 
 			dateStart = dateStart + 60
 			assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
@@ -1876,7 +1819,7 @@ func TestTsdbQueryMemFilterRateTrueRateOptionsTrueCounterMaxAndResetValue(t *tes
 			i = i * 10.0
 		} else {
 			calc := ((countermax - i + 3000.0) / (float32((dateStart + 60) - dateStart)))
-			assert.Exactly(t, calc, payloadPoints[0].Dps[key])
+			assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
 
 			dateStart = dateStart + 60
 			assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
@@ -1902,7 +1845,7 @@ func TestTsdbQueryMemFilterRateTrueNoPoints(t *testing.T) {
 	    }]
 	}`, hashMapStartTime["ts1TsdbQueryMem"])
 
-	code, response, _ := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/api/query", []byte(payload))
+	code, response, _ := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/api/query", []byte(payload))
 
 	assert.Equal(t, 200, code)
 	assert.Equal(t, "[]", string(response))
@@ -1932,7 +1875,7 @@ func TestTsdbQueryMem(t *testing.T) {
 	dateStart := hashMapStartTime["ts1TsdbQueryMem"]
 	for _, key := range keys {
 
-		assert.Exactly(t, i, payloadPoints[0].Dps[key])
+		assert.Exactly(t, i, float32(payloadPoints[0].Dps[key].(float64)))
 		assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 		dateStart = dateStart + 60
 		i++
@@ -1964,7 +1907,7 @@ func TestTsdbQueryMemAproxMediaExactBeginAndEnd(t *testing.T) {
 	for _, key := range keys {
 
 		media = (i + i + 1 + i + 2) / 3
-		assert.Exactly(t, media, payloadPoints[0].Dps[key])
+		assert.Exactly(t, media, float32(payloadPoints[0].Dps[key].(float64)))
 		assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 		dateStart = dateStart + 180
 		i++
@@ -1994,7 +1937,7 @@ func TestTsdbQueryMemAproxMin(t *testing.T) {
 	dateStart := hashMapStartTime["ts2TsdbQueryMem"]
 	for _, key := range keys {
 
-		assert.Exactly(t, i, payloadPoints[0].Dps[key])
+		assert.Exactly(t, i, float32(payloadPoints[0].Dps[key].(float64)))
 		assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 		dateStart = dateStart + 180
 		i++
@@ -2023,7 +1966,7 @@ func TestTsdbQueryMemAproxMax(t *testing.T) {
 	dateStart := hashMapStartTime["ts2TsdbQueryMem"]
 	for _, key := range keys {
 
-		assert.Exactly(t, i, payloadPoints[0].Dps[key])
+		assert.Exactly(t, i, float32(payloadPoints[0].Dps[key].(float64)))
 		assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 		dateStart = dateStart + 180
 		i++
@@ -2054,7 +1997,7 @@ func TestTsdbQueryMemAproxSum(t *testing.T) {
 	for _, key := range keys {
 
 		sum = i + i + 1 + i + 2
-		assert.Exactly(t, sum, payloadPoints[0].Dps[key])
+		assert.Exactly(t, sum, float32(payloadPoints[0].Dps[key].(float64)))
 		assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 		dateStart = dateStart + 180
 		i++
@@ -2082,7 +2025,7 @@ func TestTsdbQueryMemAproxCount(t *testing.T) {
 	var i float32 = 3.0
 	dateStart := hashMapStartTime["ts2TsdbQueryMem"]
 	for _, key := range keys {
-		assert.Exactly(t, i, payloadPoints[0].Dps[key])
+		assert.Exactly(t, i, float32(payloadPoints[0].Dps[key].(float64)))
 		assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 		dateStart = dateStart + 180
 	}
@@ -2110,7 +2053,7 @@ func TestTsdbQueryMemAproxMaxHour(t *testing.T) {
 	dateStart := hashMapStartTime["ts3TsdbQueryMem"]
 	for _, key := range keys {
 
-		assert.Exactly(t, i, payloadPoints[0].Dps[key])
+		assert.Exactly(t, i, float32(payloadPoints[0].Dps[key].(float64)))
 		i += 20.0
 
 		assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
@@ -2138,7 +2081,7 @@ func TestTsdbQueryMemMergeDateLimit(t *testing.T) {
 
 	for _, key := range keys {
 
-		assert.Exactly(t, i + i, payloadPoints[0].Dps[key])
+		assert.Exactly(t, i+i, float32(payloadPoints[0].Dps[key].(float64)))
 		i++
 
 		assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
@@ -2199,7 +2142,7 @@ func TestTsdbQueryMemMergePtsSameDate(t *testing.T) {
 
 	for _, key := range keys {
 
-		assert.Exactly(t, i * 2, payloadPoints[0].Dps[key])
+		assert.Exactly(t, i*2, float32(payloadPoints[0].Dps[key].(float64)))
 		i++
 
 		assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
@@ -2227,7 +2170,7 @@ func TestTsdbQueryMemMergeAvg(t *testing.T) {
 	for _, key := range keys {
 
 		avg := (i + j) / 2
-		assert.Exactly(t, avg, payloadPoints[0].Dps[key])
+		assert.Exactly(t, avg, float32(payloadPoints[0].Dps[key].(float64)))
 		i++
 		j += 5
 
@@ -2254,7 +2197,7 @@ func TestTsdbQueryMemMergeMin(t *testing.T) {
 	dateStart := hashMapStartTime["ts7TsdbQueryMem"]
 
 	for _, key := range keys {
-		assert.Exactly(t, i, payloadPoints[0].Dps[key])
+		assert.Exactly(t, i, float32(payloadPoints[0].Dps[key].(float64)))
 		i++
 
 		assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
@@ -2273,12 +2216,12 @@ func TestTsdbQueryMemMergeMax(t *testing.T) {
     	}]
 	}`, hashMapStartTime["ts7TsdbQueryMem"])
 
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/api/query", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/api/query", []byte(payload))
 	if err != nil {
 		t.Error(err)
 		t.SkipNow()
 	}
-	payloadPoints := []PayloadTsdbQueryMem{}
+	payloadPoints := []tools.ResponseQuery{}
 
 	err = json.Unmarshal(response, &payloadPoints)
 	if err != nil {
@@ -2318,7 +2261,7 @@ func TestTsdbQueryMemMergeMax(t *testing.T) {
 	dateStart := hashMapStartTime["ts7TsdbQueryMem"]
 
 	for _, key := range keys {
-		assert.Exactly(t, i, payloadPoints[0].Dps[key])
+		assert.Exactly(t, i, float32(payloadPoints[0].Dps[key].(float64)))
 		i += 5.0
 
 		assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
@@ -2347,7 +2290,7 @@ func TestTsdbQueryMemMergeSum(t *testing.T) {
 	for _, key := range keys {
 
 		sum = i + j
-		assert.Exactly(t, sum, payloadPoints[0].Dps[key])
+		assert.Exactly(t, sum, float32(payloadPoints[0].Dps[key].(float64)))
 		i++
 		j += 5
 
@@ -2375,7 +2318,7 @@ func TestTsdbQueryMemMergeCount(t *testing.T) {
 
 	for _, key := range keys {
 
-		assert.Exactly(t, i, payloadPoints[0].Dps[key])
+		assert.Exactly(t, i, float32(payloadPoints[0].Dps[key].(float64)))
 		assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 		dateStart += 60
 	}
@@ -2401,8 +2344,8 @@ func TestTsdbQueryMemMergeSumDownAvgMinute(t *testing.T) {
 
 	for _, key := range keys {
 
-		sum := ((i + i + 1 + i + 2) / 3 + (j + j + 5 + j + 10) / 3)
-		assert.Exactly(t, sum, payloadPoints[0].Dps[key])
+		sum := ((i+i+1+i+2)/3 + (j+j+5+j+10)/3)
+		assert.Exactly(t, sum, float32(payloadPoints[0].Dps[key].(float64)))
 		i += 3
 		j += 15
 
@@ -2431,7 +2374,7 @@ func TestTsdbQueryMemMergeSumDownSumMinute(t *testing.T) {
 	for _, key := range keys {
 
 		sum := ((i + i + 1 + i + 2) + (j + j + 5 + j + 10))
-		assert.Exactly(t, sum, payloadPoints[0].Dps[key])
+		assert.Exactly(t, sum, float32(payloadPoints[0].Dps[key].(float64)))
 		i += 3
 		j += 15
 
@@ -2449,7 +2392,7 @@ func TestTsdbQueryMemMergeTimeDiff(t *testing.T) {
     		"metric": "ts01_2tsdbmem",
     		"aggregator": "sum"
     	}]
-	}`, hashMapStartTime["ts1_2TsdbQueryMem"] - 30, hashMapStartTime["ts1_2TsdbQueryMem"] + 6000 - 30)
+	}`, hashMapStartTime["ts1_2TsdbQueryMem"]-30, hashMapStartTime["ts1_2TsdbQueryMem"]+6000-30)
 
 	keys, payloadPoints := postAPIQueryAndCheckMem(t, payload, "ts01_2tsdbmem", 1, 200, 0, 1, 2, hashMapMem["ts1_2TsdbQueryMem"], hashMapMem["ts1_2TsdbQueryMem2"])
 	assert.Equal(t, "host", payloadPoints[0].AggTags[0])
@@ -2459,7 +2402,7 @@ func TestTsdbQueryMemMergeTimeDiff(t *testing.T) {
 	count := 0.0
 	for _, key := range keys {
 
-		assert.Exactly(t, i, payloadPoints[0].Dps[key])
+		assert.Exactly(t, i, float32(payloadPoints[0].Dps[key].(float64)))
 		count++
 
 		if count == 2 {
@@ -2484,7 +2427,7 @@ func TestTsdbQueryMemMergeTimeDiffDownsampleExactBeginAndEnd(t *testing.T) {
     		"downsample": "3m-min",
     		"aggregator": "sum"
     	}]
-	}`, hashMapStartTime["ts1_2TsdbQueryMem"] - 30, hashMapStartTime["ts1_2TsdbQueryMem"] + 6000)
+	}`, hashMapStartTime["ts1_2TsdbQueryMem"]-30, hashMapStartTime["ts1_2TsdbQueryMem"]+6000)
 
 	keys, payloadPoints := postAPIQueryAndCheckMem(t, payload, "ts01_2tsdbmem", 1, 34, 0, 1, 2, hashMapMem["ts1_2TsdbQueryMem"], hashMapMem["ts1_2TsdbQueryMem2"])
 	assert.Equal(t, "host", payloadPoints[0].AggTags[0])
@@ -2493,7 +2436,7 @@ func TestTsdbQueryMemMergeTimeDiffDownsampleExactBeginAndEnd(t *testing.T) {
 	dateStart := hashMapStartTime["ts1_2TsdbQueryMem"] - 30
 	for _, key := range keys {
 
-		assert.Exactly(t, i + i, payloadPoints[0].Dps[key])
+		assert.Exactly(t, i+i, float32(payloadPoints[0].Dps[key].(float64)))
 		i += 3
 
 		assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
@@ -2511,7 +2454,7 @@ func TestTsdbQueryMemNullValuesDownsample(t *testing.T) {
     		"downsample": "3m-sum",
     		"aggregator": "sum"
     	}]
-	}`, hashMapStartTime["ts9TsdbQueryMem"], hashMapStartTime["ts9TsdbQueryMem"] + 5350)
+	}`, hashMapStartTime["ts9TsdbQueryMem"], hashMapStartTime["ts9TsdbQueryMem"]+5350)
 
 	keys, payloadPoints := postAPIQueryAndCheckMem(t, payload, "ts09tsdbmem", 1, 10, 1, 0, 1)
 	assert.Equal(t, hashMapMem["ts9TsdbQueryMem"], payloadPoints[0].Tsuuids[0])
@@ -2523,7 +2466,7 @@ func TestTsdbQueryMemNullValuesDownsample(t *testing.T) {
 
 		if i < 15 || i > 15 {
 			sum := (i) + (i + 1) + (i + 2)
-			assert.Exactly(t, sum, payloadPoints[0].Dps[key])
+			assert.Exactly(t, sum, float32(payloadPoints[0].Dps[key].(float64)))
 
 			assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 			dateStart += 180
@@ -2531,7 +2474,7 @@ func TestTsdbQueryMemNullValuesDownsample(t *testing.T) {
 		} else {
 			i = 75
 			sum := (i) + (i + 1) + (i + 2)
-			assert.Exactly(t, sum, payloadPoints[0].Dps[key])
+			assert.Exactly(t, sum, float32(payloadPoints[0].Dps[key].(float64)))
 
 			dateStart += 180 * 20
 			assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
@@ -2551,7 +2494,7 @@ func TestTsdbQueryMemNullValuesDownsampleNone(t *testing.T) {
     		"downsample": "3m-sum-none",
     		"aggregator": "sum"
     	}]
-	}`, hashMapStartTime["ts9TsdbQueryMem"], hashMapStartTime["ts9TsdbQueryMem"] + 5350)
+	}`, hashMapStartTime["ts9TsdbQueryMem"], hashMapStartTime["ts9TsdbQueryMem"]+5350)
 
 	keys, payloadPoints := postAPIQueryAndCheckMem(t, payload, "ts09tsdbmem", 1, 10, 1, 0, 1)
 	assert.Equal(t, hashMapMem["ts9TsdbQueryMem"], payloadPoints[0].Tsuuids[0])
@@ -2563,7 +2506,7 @@ func TestTsdbQueryMemNullValuesDownsampleNone(t *testing.T) {
 
 		if i < 15 || i > 15 {
 			sum := (i) + (i + 1) + (i + 2)
-			assert.Exactly(t, sum, payloadPoints[0].Dps[key])
+			assert.Exactly(t, sum, float32(payloadPoints[0].Dps[key].(float64)))
 
 			assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 			dateStart += 180
@@ -2571,7 +2514,7 @@ func TestTsdbQueryMemNullValuesDownsampleNone(t *testing.T) {
 		} else {
 			i = 75
 			sum := (i) + (i + 1) + (i + 2)
-			assert.Exactly(t, sum, payloadPoints[0].Dps[key])
+			assert.Exactly(t, sum, float32(payloadPoints[0].Dps[key].(float64)))
 
 			dateStart += 180 * 20
 			assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
@@ -2591,7 +2534,7 @@ func TestTsdbQueryMemNullValuesDownsampleNull(t *testing.T) {
     		"downsample": "3m-sum-null",
     		"aggregator": "sum"
     	}]
-	}`, hashMapStartTime["ts9TsdbQueryMem"], hashMapStartTime["ts9TsdbQueryMem"] + 5350)
+	}`, hashMapStartTime["ts9TsdbQueryMem"], hashMapStartTime["ts9TsdbQueryMem"]+5350)
 
 	keys, payloadPoints := postAPIQueryAndCheckMem(t, payload, "ts09tsdbmem", 1, 30, 1, 0, 1)
 	assert.Equal(t, hashMapMem["ts9TsdbQueryMem"], payloadPoints[0].Tsuuids[0])
@@ -2603,7 +2546,7 @@ func TestTsdbQueryMemNullValuesDownsampleNull(t *testing.T) {
 
 		if i < 15 || i >= 75 {
 			sum := (i) + (i + 1) + (i + 2)
-			assert.Exactly(t, sum, payloadPoints[0].Dps[key])
+			assert.Exactly(t, sum, float32(payloadPoints[0].Dps[key].(float64)))
 
 			assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 			dateStart += 180
@@ -2629,14 +2572,14 @@ func TestTsdbQueryMemNullValuesDownsampleNan(t *testing.T) {
     		"downsample": "3m-sum-nan",
     		"aggregator": "sum"
     	}]
-	}`, hashMapStartTime["ts9TsdbQueryMem"], hashMapStartTime["ts9TsdbQueryMem"] + 5350)
+	}`, hashMapStartTime["ts9TsdbQueryMem"], hashMapStartTime["ts9TsdbQueryMem"]+5350)
 
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/api/query", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/api/query", []byte(payload))
 	if err != nil {
 		t.Error(err)
 		t.SkipNow()
 	}
-	payloadPoints := []PayloadTsdbNullQueryMem{}
+	payloadPoints := []tools.ResponseQuery{}
 	err = json.Unmarshal(response, &payloadPoints)
 	if err != nil {
 		t.Error(err)
@@ -2671,13 +2614,13 @@ func TestTsdbQueryMemNullValuesDownsampleNan(t *testing.T) {
 
 		if i < 15 || i >= 75 {
 			sum := (i) + (i + 1) + (i + 2)
-			assert.Exactly(t, sum, payloadPoints[0].Dps[key])
+			assert.Exactly(t, sum, payloadPoints[0].Dps[key].(float64))
 
 			assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 			dateStart += 180
 
 		} else {
-			assert.Exactly(t, "NaN", payloadPoints[0].Dps[key], "they should be nan")
+			assert.Exactly(t, "NaN", payloadPoints[0].Dps[key].(string), "they should be nan")
 			assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 			dateStart += 180
 		}
@@ -2696,14 +2639,14 @@ func TestTsdbQueryMemNullValuesDownsampleZero(t *testing.T) {
     		"downsample": "3m-sum-zero",
     		"aggregator": "sum"
     	}]
-	}`, hashMapStartTime["ts9TsdbQueryMem"], hashMapStartTime["ts9TsdbQueryMem"] + 5350)
+	}`, hashMapStartTime["ts9TsdbQueryMem"], hashMapStartTime["ts9TsdbQueryMem"]+5350)
 
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/api/query", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/api/query", []byte(payload))
 	if err != nil {
 		t.Error(err)
 		t.SkipNow()
 	}
-	payloadPoints := []PayloadTsdbNullQueryMem{}
+	payloadPoints := []tools.ResponseQuery{}
 	err = json.Unmarshal(response, &payloadPoints)
 	if err != nil {
 		t.Error(err)
@@ -2738,13 +2681,13 @@ func TestTsdbQueryMemNullValuesDownsampleZero(t *testing.T) {
 
 		if i < 15 || i >= 75 {
 			sum := (i) + (i + 1) + (i + 2)
-			assert.Exactly(t, sum, payloadPoints[0].Dps[key])
+			assert.Exactly(t, sum, payloadPoints[0].Dps[key].(float64))
 
 			assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 			dateStart += 180
 
 		} else {
-			assert.Exactly(t, 0.0, payloadPoints[0].Dps[key], "they should be nil")
+			assert.Exactly(t, 0.0, payloadPoints[0].Dps[key].(float64), "they should be nil")
 			assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 			dateStart += 180
 		}
@@ -2762,7 +2705,7 @@ func TestTsdbQueryMemNullValueMerge(t *testing.T) {
     		"metric": "ts07_1tsdbmem",
     		"aggregator": "sum"
     	}]
-	}`, hashMapStartTime["ts7_1TsdbQueryMem"], hashMapStartTime["ts7_1TsdbQueryMem"] + 5350)
+	}`, hashMapStartTime["ts7_1TsdbQueryMem"], hashMapStartTime["ts7_1TsdbQueryMem"]+5350)
 
 	keys, payloadPoints := postAPIQueryAndCheckMem(t, payload, "ts07_1tsdbmem", 1, 90, 0, 1, 2, hashMapMem["ts7_1TsdbQueryMem"], hashMapMem["ts7_1TsdbQueryMem2"])
 	assert.Equal(t, "host", payloadPoints[0].AggTags[0])
@@ -2773,10 +2716,10 @@ func TestTsdbQueryMemNullValueMerge(t *testing.T) {
 
 		if i < 15 || i >= 75 {
 			sum := i + j
-			assert.Exactly(t, sum, payloadPoints[0].Dps[key])
+			assert.Exactly(t, sum, float32(payloadPoints[0].Dps[key].(float64)))
 
 		} else {
-			assert.Exactly(t, j, payloadPoints[0].Dps[key])
+			assert.Exactly(t, j, float32(payloadPoints[0].Dps[key].(float64)))
 
 		}
 		i++
@@ -2797,7 +2740,7 @@ func TestTsdbQueryMemBothValuesNullMerge(t *testing.T) {
     		"metric": "ts09_1tsdbmem",
     		"aggregator": "sum"
     	}]
-	}`, hashMapStartTime["ts9_1TsdbQueryMem"], hashMapStartTime["ts9_1TsdbQueryMem"] + 5350)
+	}`, hashMapStartTime["ts9_1TsdbQueryMem"], hashMapStartTime["ts9_1TsdbQueryMem"]+5350)
 
 	keys, payloadPoints := postAPIQueryAndCheckMem(t, payload, "ts09_1tsdbmem", 1, 30, 0, 1, 2, hashMapMem["ts9_1TsdbQueryMem2"], hashMapMem["ts9_1TsdbQueryMem4"])
 	assert.Equal(t, "host", payloadPoints[0].AggTags[0])
@@ -2808,7 +2751,7 @@ func TestTsdbQueryMemBothValuesNullMerge(t *testing.T) {
 
 		if i < 15 || i > 15 {
 			sum := i + j
-			assert.Exactly(t, sum, payloadPoints[0].Dps[key])
+			assert.Exactly(t, sum, float32(payloadPoints[0].Dps[key].(float64)))
 
 			assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 			dateStart += 60
@@ -2817,7 +2760,7 @@ func TestTsdbQueryMemBothValuesNullMerge(t *testing.T) {
 			i = 75
 			j = 75
 			sum := i + j
-			assert.Exactly(t, sum, payloadPoints[0].Dps[key])
+			assert.Exactly(t, sum, float32(payloadPoints[0].Dps[key].(float64)))
 
 			dateStart += 180 * 20
 			assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
@@ -2840,7 +2783,7 @@ func TestTsdbQueryMemBothValuesNullMergeAndDownsample(t *testing.T) {
     		"downsample": "3m-max",
     		"aggregator": "sum"
     	}]
-	}`, hashMapStartTime["ts9_1TsdbQueryMem"], hashMapStartTime["ts9_1TsdbQueryMem"] + 5350)
+	}`, hashMapStartTime["ts9_1TsdbQueryMem"], hashMapStartTime["ts9_1TsdbQueryMem"]+5350)
 
 	keys, payloadPoints := postAPIQueryAndCheckMem(t, payload, "ts09_1tsdbmem", 1, 10, 0, 1, 2, hashMapMem["ts9_1TsdbQueryMem2"], hashMapMem["ts9_1TsdbQueryMem4"])
 	assert.Equal(t, "host", payloadPoints[0].AggTags[0])
@@ -2851,7 +2794,7 @@ func TestTsdbQueryMemBothValuesNullMergeAndDownsample(t *testing.T) {
 
 		if i < 15 || i > 15 {
 			sum := i + 2 + j + 2
-			assert.Exactly(t, sum, payloadPoints[0].Dps[key])
+			assert.Exactly(t, sum, float32(payloadPoints[0].Dps[key].(float64)))
 
 			assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 			dateStart += 180
@@ -2860,7 +2803,7 @@ func TestTsdbQueryMemBothValuesNullMergeAndDownsample(t *testing.T) {
 			i = 75
 			j = 75
 			sum := i + 2 + j + 2
-			assert.Exactly(t, sum, payloadPoints[0].Dps[key])
+			assert.Exactly(t, sum, float32(payloadPoints[0].Dps[key].(float64)))
 
 			dateStart += 180 * 20
 			assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
@@ -2883,7 +2826,7 @@ func TestTsdbQueryMemBothValuesNullMergeAndDownsampleNone(t *testing.T) {
     		"downsample": "3m-max-none",
     		"aggregator": "sum"
     	}]
-	}`, hashMapStartTime["ts9_1TsdbQueryMem"], hashMapStartTime["ts9_1TsdbQueryMem"] + 5350)
+	}`, hashMapStartTime["ts9_1TsdbQueryMem"], hashMapStartTime["ts9_1TsdbQueryMem"]+5350)
 
 	keys, payloadPoints := postAPIQueryAndCheckMem(t, payload, "ts09_1tsdbmem", 1, 10, 0, 1, 2, hashMapMem["ts9_1TsdbQueryMem2"], hashMapMem["ts9_1TsdbQueryMem4"])
 	assert.Equal(t, "host", payloadPoints[0].AggTags[0])
@@ -2894,7 +2837,7 @@ func TestTsdbQueryMemBothValuesNullMergeAndDownsampleNone(t *testing.T) {
 
 		if i < 15 || i > 15 {
 			sum := i + 2 + j + 2
-			assert.Exactly(t, sum, payloadPoints[0].Dps[key])
+			assert.Exactly(t, sum, float32(payloadPoints[0].Dps[key].(float64)))
 
 			assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 			dateStart += 180
@@ -2903,7 +2846,7 @@ func TestTsdbQueryMemBothValuesNullMergeAndDownsampleNone(t *testing.T) {
 			i = 75
 			j = 75
 			sum := i + 2 + j + 2
-			assert.Exactly(t, sum, payloadPoints[0].Dps[key])
+			assert.Exactly(t, sum, float32(payloadPoints[0].Dps[key].(float64)))
 
 			dateStart += 180 * 20
 			assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
@@ -2926,14 +2869,14 @@ func TestTsdbQueryMemBothValuesNullMergeAndDownsampleNull(t *testing.T) {
     		"downsample": "3m-max-null",
     		"aggregator": "sum"
     	}]
-	}`, hashMapStartTime["ts9_1TsdbQueryMem"], hashMapStartTime["ts9_1TsdbQueryMem"] + 5350)
+	}`, hashMapStartTime["ts9_1TsdbQueryMem"], hashMapStartTime["ts9_1TsdbQueryMem"]+5350)
 
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/api/query", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/api/query", []byte(payload))
 	if err != nil {
 		t.Error(err)
 		t.SkipNow()
 	}
-	payloadPoints := []PayloadTsdbNullQueryMem{}
+	payloadPoints := []tools.ResponseQuery{}
 
 	err = json.Unmarshal(response, &payloadPoints)
 	if err != nil {
@@ -2976,7 +2919,7 @@ func TestTsdbQueryMemBothValuesNullMergeAndDownsampleNull(t *testing.T) {
 
 		if i < 15 || i >= 75 {
 			sum := i + 2 + j + 2
-			assert.Exactly(t, sum, payloadPoints[0].Dps[key])
+			assert.Exactly(t, sum, payloadPoints[0].Dps[key].(float64))
 
 			assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 			dateStart += 180
@@ -3002,14 +2945,14 @@ func TestTsdbQueryMemBothValuesNullMergeAndDownsampleNan(t *testing.T) {
     		"downsample": "3m-max-nan",
     		"aggregator": "sum"
     	}]
-	}`, hashMapStartTime["ts9_1TsdbQueryMem"], hashMapStartTime["ts9_1TsdbQueryMem"] + 5350)
+	}`, hashMapStartTime["ts9_1TsdbQueryMem"], hashMapStartTime["ts9_1TsdbQueryMem"]+5350)
 
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/api/query", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/api/query", []byte(payload))
 	if err != nil {
 		t.Error(err)
 		t.SkipNow()
 	}
-	payloadPoints := []PayloadTsdbNullQueryMem{}
+	payloadPoints := []tools.ResponseQuery{}
 
 	err = json.Unmarshal(response, &payloadPoints)
 	if err != nil {
@@ -3052,13 +2995,13 @@ func TestTsdbQueryMemBothValuesNullMergeAndDownsampleNan(t *testing.T) {
 
 		if i < 15 || i >= 75 {
 			sum := i + 2 + j + 2
-			assert.Exactly(t, sum, payloadPoints[0].Dps[key])
+			assert.Exactly(t, sum, payloadPoints[0].Dps[key].(float64))
 
 			assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 			dateStart += 180
 
 		} else {
-			assert.Exactly(t, "NaN", payloadPoints[0].Dps[key], "they should be nan")
+			assert.Exactly(t, "NaN", payloadPoints[0].Dps[key].(string), "they should be nan")
 			assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 			dateStart += 180
 		}
@@ -3078,7 +3021,7 @@ func TestTsdbQueryMemBothValuesNullMergeAndDownsampleZero(t *testing.T) {
     		"downsample": "3m-max-zero",
     		"aggregator": "sum"
     	}]
-	}`, hashMapStartTime["ts9_1TsdbQueryMem"], hashMapStartTime["ts9_1TsdbQueryMem"] + 5350)
+	}`, hashMapStartTime["ts9_1TsdbQueryMem"], hashMapStartTime["ts9_1TsdbQueryMem"]+5350)
 
 	keys, payloadPoints := postAPIQueryAndCheckMem(t, payload, "ts09_1tsdbmem", 1, 30, 0, 1, 2, hashMapMem["ts9_1TsdbQueryMem2"], hashMapMem["ts9_1TsdbQueryMem4"])
 	assert.Equal(t, "host", payloadPoints[0].AggTags[0])
@@ -3089,13 +3032,13 @@ func TestTsdbQueryMemBothValuesNullMergeAndDownsampleZero(t *testing.T) {
 
 		if i < 15 || i >= 75 {
 			sum := i + 2 + j + 2
-			assert.Exactly(t, sum, payloadPoints[0].Dps[key])
+			assert.Exactly(t, sum, float32(payloadPoints[0].Dps[key].(float64)))
 
 			assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 			dateStart += 180
 
 		} else {
-			assert.Exactly(t, float32(0.0), payloadPoints[0].Dps[key], "they should be nil")
+			assert.Exactly(t, float32(0.0), float32(payloadPoints[0].Dps[key].(float64)), "they should be nil")
 			assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 			dateStart += 180
 		}
@@ -3115,7 +3058,7 @@ func TestTsdbQueryMemNullValueMergeAndDownsample(t *testing.T) {
     		"downsample": "3m-sum",
     		"aggregator": "sum"
     	}]
-	}`, hashMapStartTime["ts7_1TsdbQueryMem"], hashMapStartTime["ts7_1TsdbQueryMem"] + 5350)
+	}`, hashMapStartTime["ts7_1TsdbQueryMem"], hashMapStartTime["ts7_1TsdbQueryMem"]+5350)
 
 	keys, payloadPoints := postAPIQueryAndCheckMem(t, payload, "ts07_1tsdbmem", 1, 30, 0, 1, 2, hashMapMem["ts7_1TsdbQueryMem"], hashMapMem["ts7_1TsdbQueryMem2"])
 	assert.Equal(t, "host", payloadPoints[0].AggTags[0])
@@ -3126,11 +3069,11 @@ func TestTsdbQueryMemNullValueMergeAndDownsample(t *testing.T) {
 
 		if i < 15 || i >= 75 {
 			sum := (i + i + 1 + i + 2) + (j + j + 1 + j + 2)
-			assert.Exactly(t, sum, payloadPoints[0].Dps[key])
+			assert.Exactly(t, sum, float32(payloadPoints[0].Dps[key].(float64)))
 
 		} else {
 			sum := (i + i + 1 + i + 2)
-			assert.Exactly(t, sum, payloadPoints[0].Dps[key])
+			assert.Exactly(t, sum, float32(payloadPoints[0].Dps[key].(float64)))
 
 		}
 		i += 3
@@ -3152,7 +3095,7 @@ func TestTsdbQueryMemNullValueMergeAndDownsampleNone(t *testing.T) {
     		"downsample": "3m-sum-none",
     		"aggregator": "sum"
     	}]
-	}`, hashMapStartTime["ts7_1TsdbQueryMem"], hashMapStartTime["ts7_1TsdbQueryMem"] + 5350)
+	}`, hashMapStartTime["ts7_1TsdbQueryMem"], hashMapStartTime["ts7_1TsdbQueryMem"]+5350)
 
 	keys, payloadPoints := postAPIQueryAndCheckMem(t, payload, "ts07_1tsdbmem", 1, 30, 0, 1, 2, hashMapMem["ts7_1TsdbQueryMem"], hashMapMem["ts7_1TsdbQueryMem2"])
 	assert.Equal(t, "host", payloadPoints[0].AggTags[0])
@@ -3163,11 +3106,11 @@ func TestTsdbQueryMemNullValueMergeAndDownsampleNone(t *testing.T) {
 
 		if i < 15 || i >= 75 {
 			sum := (i + i + 1 + i + 2) + (j + j + 1 + j + 2)
-			assert.Exactly(t, sum, payloadPoints[0].Dps[key])
+			assert.Exactly(t, sum, float32(payloadPoints[0].Dps[key].(float64)))
 
 		} else {
 			sum := (i + i + 1 + i + 2)
-			assert.Exactly(t, sum, payloadPoints[0].Dps[key])
+			assert.Exactly(t, sum, float32(payloadPoints[0].Dps[key].(float64)))
 
 		}
 		i += 3
@@ -3189,7 +3132,7 @@ func TestTsdbQueryMemNullValueMergeAndDownsampleNull(t *testing.T) {
     		"downsample": "3m-sum-null",
     		"aggregator": "sum"
     	}]
-	}`, hashMapStartTime["ts7_1TsdbQueryMem"], hashMapStartTime["ts7_1TsdbQueryMem"] + 5350)
+	}`, hashMapStartTime["ts7_1TsdbQueryMem"], hashMapStartTime["ts7_1TsdbQueryMem"]+5350)
 
 	keys, payloadPoints := postAPIQueryAndCheckMem(t, payload, "ts07_1tsdbmem", 1, 30, 0, 1, 2, hashMapMem["ts7_1TsdbQueryMem"], hashMapMem["ts7_1TsdbQueryMem2"])
 	assert.Equal(t, "host", payloadPoints[0].AggTags[0])
@@ -3200,11 +3143,11 @@ func TestTsdbQueryMemNullValueMergeAndDownsampleNull(t *testing.T) {
 
 		if i < 15 || i >= 75 {
 			sum := (i + i + 1 + i + 2) + (j + j + 1 + j + 2)
-			assert.Exactly(t, sum, payloadPoints[0].Dps[key])
+			assert.Exactly(t, sum, float32(payloadPoints[0].Dps[key].(float64)))
 
 		} else {
 			sum := (i + i + 1 + i + 2)
-			assert.Exactly(t, sum, payloadPoints[0].Dps[key])
+			assert.Exactly(t, sum, float32(payloadPoints[0].Dps[key].(float64)))
 
 		}
 		i += 3
@@ -3226,7 +3169,7 @@ func TestTsdbQueryMemNullValueMergeAndDownsampleNan(t *testing.T) {
     		"downsample": "3m-sum-nan",
     		"aggregator": "sum"
     	}]
-	}`, hashMapStartTime["ts7_1TsdbQueryMem"], hashMapStartTime["ts7_1TsdbQueryMem"] + 5350)
+	}`, hashMapStartTime["ts7_1TsdbQueryMem"], hashMapStartTime["ts7_1TsdbQueryMem"]+5350)
 
 	keys, payloadPoints := postAPIQueryAndCheckMem(t, payload, "ts07_1tsdbmem", 1, 30, 0, 1, 2, hashMapMem["ts7_1TsdbQueryMem"], hashMapMem["ts7_1TsdbQueryMem2"])
 	assert.Equal(t, "host", payloadPoints[0].AggTags[0])
@@ -3237,11 +3180,11 @@ func TestTsdbQueryMemNullValueMergeAndDownsampleNan(t *testing.T) {
 
 		if i < 15 || i >= 75 {
 			sum := (i + i + 1 + i + 2) + (j + j + 1 + j + 2)
-			assert.Exactly(t, sum, payloadPoints[0].Dps[key])
+			assert.Exactly(t, sum, float32(payloadPoints[0].Dps[key].(float64)))
 
 		} else {
 			sum := (i + i + 1 + i + 2)
-			assert.Exactly(t, sum, payloadPoints[0].Dps[key])
+			assert.Exactly(t, sum, float32(payloadPoints[0].Dps[key].(float64)))
 
 		}
 		i += 3
@@ -3263,7 +3206,7 @@ func TestTsdbQueryMemNullValueMergeAndDownsampleZero(t *testing.T) {
     		"downsample": "3m-sum-zero",
     		"aggregator": "sum"
     	}]
-	}`, hashMapStartTime["ts7_1TsdbQueryMem"], hashMapStartTime["ts7_1TsdbQueryMem"] + 5350)
+	}`, hashMapStartTime["ts7_1TsdbQueryMem"], hashMapStartTime["ts7_1TsdbQueryMem"]+5350)
 
 	keys, payloadPoints := postAPIQueryAndCheckMem(t, payload, "ts07_1tsdbmem", 1, 30, 0, 1, 2, hashMapMem["ts7_1TsdbQueryMem"], hashMapMem["ts7_1TsdbQueryMem2"])
 	assert.Equal(t, "host", payloadPoints[0].AggTags[0])
@@ -3274,11 +3217,11 @@ func TestTsdbQueryMemNullValueMergeAndDownsampleZero(t *testing.T) {
 
 		if i < 15 || i >= 75 {
 			sum := (i + i + 1 + i + 2) + (j + j + 1 + j + 2)
-			assert.Exactly(t, sum, payloadPoints[0].Dps[key])
+			assert.Exactly(t, sum, float32(payloadPoints[0].Dps[key].(float64)))
 
 		} else {
 			sum := (i + i + 1 + i + 2)
-			assert.Exactly(t, sum, payloadPoints[0].Dps[key])
+			assert.Exactly(t, sum, float32(payloadPoints[0].Dps[key].(float64)))
 
 		}
 		i += 3
@@ -3304,7 +3247,7 @@ func TestTsdbQueryMemTwoTSMerge(t *testing.T) {
     		"downsample": "3m-sum",
     		"aggregator": "avg"
     	}]
-	}`, hashMapStartTime["ts7_1TsdbQueryMem"], hashMapStartTime["ts7_1TsdbQueryMem"] + 5350)
+	}`, hashMapStartTime["ts7_1TsdbQueryMem"], hashMapStartTime["ts7_1TsdbQueryMem"]+5350)
 
 	keys, payloadPoints := postAPIQueryAndCheckMem(t, payload, "ts07_1tsdbmem", 2, 30, 0, 1, 2, hashMapMem["ts7_1TsdbQueryMem"], hashMapMem["ts7_1TsdbQueryMem2"])
 	assert.Equal(t, "host", payloadPoints[0].AggTags[0])
@@ -3315,11 +3258,11 @@ func TestTsdbQueryMemTwoTSMerge(t *testing.T) {
 
 		if i < 15 || i >= 75 {
 			sum := (i + i + 1 + i + 2) + (j + j + 1 + j + 2)
-			assert.Exactly(t, sum, payloadPoints[0].Dps[key])
+			assert.Exactly(t, sum, float32(payloadPoints[0].Dps[key].(float64)))
 
 		} else {
 			sum := (i + i + 1 + i + 2)
-			assert.Exactly(t, sum, payloadPoints[0].Dps[key])
+			assert.Exactly(t, sum, float32(payloadPoints[0].Dps[key].(float64)))
 
 		}
 		i += 3
@@ -3351,11 +3294,11 @@ func TestTsdbQueryMemTwoTSMerge(t *testing.T) {
 
 		if i < 15 || i >= 75 {
 			sum := ((i + i + 1 + i + 2) + (j + j + 1 + j + 2)) / 2
-			assert.Exactly(t, sum, payloadPoints[1].Dps[key])
+			assert.Exactly(t, sum, float32(payloadPoints[1].Dps[key].(float64)))
 
 		} else {
 			sum := (i + i + 1 + i + 2)
-			assert.Exactly(t, sum, payloadPoints[1].Dps[key])
+			assert.Exactly(t, sum, float32(payloadPoints[1].Dps[key].(float64)))
 
 		}
 		i += 3
@@ -3393,7 +3336,7 @@ func TestTsdbQueryMemMoreThanOneTS(t *testing.T) {
 	dateStart := hashMapStartTime["ts1TsdbQueryMem"]
 	for _, key := range keys {
 
-		assert.Exactly(t, i, payloadPoints[0].Dps[key])
+		assert.Exactly(t, i, float32(payloadPoints[0].Dps[key].(float64)))
 		assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 		dateStart = dateStart + 60
 		i++
@@ -3419,7 +3362,7 @@ func TestTsdbQueryMemMoreThanOneTS(t *testing.T) {
 	dateStart = hashMapStartTime["ts1TsdbQueryMem"]
 	for _, key := range keys {
 
-		assert.Exactly(t, i, payloadPoints[1].Dps[key])
+		assert.Exactly(t, i, float32(payloadPoints[1].Dps[key].(float64)))
 		assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 		dateStart = dateStart + 60
 		i++
@@ -3453,7 +3396,7 @@ func TestTsdbQueryMemTagsMoreThanOneTSOnlyOneExists(t *testing.T) {
 	dateStart := hashMapStartTime["ts1TsdbQueryMem"]
 	for _, key := range keys {
 
-		assert.Exactly(t, i, payloadPoints[0].Dps[key])
+		assert.Exactly(t, i, float32(payloadPoints[0].Dps[key].(float64)))
 		assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 		dateStart = dateStart + 60
 		i++
@@ -3487,7 +3430,7 @@ func TestTsdbQueryMemTagsMoreThanOneTSOnlyOneExists2(t *testing.T) {
 	dateStart := hashMapStartTime["ts1TsdbQueryMem"]
 	for _, key := range keys {
 
-		assert.Exactly(t, i, payloadPoints[0].Dps[key])
+		assert.Exactly(t, i, float32(payloadPoints[0].Dps[key].(float64)))
 		assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 		dateStart = dateStart + 60
 		i++
@@ -3527,7 +3470,7 @@ func TestTsdbQueryMemFilterMoreThanOneTSOnlyOneExists(t *testing.T) {
 	dateStart := hashMapStartTime["ts1TsdbQueryMem"]
 	for _, key := range keys {
 
-		assert.Exactly(t, i, payloadPoints[0].Dps[key])
+		assert.Exactly(t, i, float32(payloadPoints[0].Dps[key].(float64)))
 		assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 		dateStart = dateStart + 60
 		i++
@@ -3567,7 +3510,7 @@ func TestTsdbQueryMemFilterMoreThanOneTSOnlyOneExists2(t *testing.T) {
 	dateStart := hashMapStartTime["ts1TsdbQueryMem"]
 	for _, key := range keys {
 
-		assert.Exactly(t, i, payloadPoints[0].Dps[key])
+		assert.Exactly(t, i, float32(payloadPoints[0].Dps[key].(float64)))
 		assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 		dateStart = dateStart + 60
 		i++
@@ -3607,7 +3550,7 @@ func TestTsdbQueryMemFilterMoreThanOneTSOnlyOneHasPoints(t *testing.T) {
 	dateStart := hashMapStartTime["ts1TsdbQueryMem"]
 	for _, key := range keys {
 
-		assert.Exactly(t, i, payloadPoints[0].Dps[key])
+		assert.Exactly(t, i, float32(payloadPoints[0].Dps[key].(float64)))
 		assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 		dateStart = dateStart + 60
 		i++
@@ -3647,7 +3590,7 @@ func TestTsdbQueryMemFilterMoreThanOneTSOnlyOneHasPoints2(t *testing.T) {
 	dateStart := hashMapStartTime["ts1TsdbQueryMem"]
 	for _, key := range keys {
 
-		assert.Exactly(t, i, payloadPoints[0].Dps[key])
+		assert.Exactly(t, i, float32(payloadPoints[0].Dps[key].(float64)))
 		assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 		dateStart = dateStart + 60
 		i++
@@ -3664,7 +3607,7 @@ func TestTsdbQueryMemFilterValuesGreaterThan(t *testing.T) {
     		"filterValue": "> 49",
     		"aggregator": "sum"
     	}]
-	}`, hashMapStartTime["ts1_2TsdbQueryMem"] - 30)
+	}`, hashMapStartTime["ts1_2TsdbQueryMem"]-30)
 
 	keys, payloadPoints := postAPIQueryAndCheckMem(t, payload, "ts01_2tsdbmem", 1, 100, 0, 1, 2, hashMapMem["ts1_2TsdbQueryMem"], hashMapMem["ts1_2TsdbQueryMem2"])
 	assert.Equal(t, "host", payloadPoints[0].AggTags[0])
@@ -3674,7 +3617,7 @@ func TestTsdbQueryMemFilterValuesGreaterThan(t *testing.T) {
 	count := 0.0
 	for _, key := range keys {
 
-		assert.Exactly(t, i, payloadPoints[0].Dps[key])
+		assert.Exactly(t, i, float32(payloadPoints[0].Dps[key].(float64)))
 		count++
 
 		if count == 2 {
@@ -3698,7 +3641,7 @@ func TestTsdbQueryMemFilterValuesGreaterThanEqualTo(t *testing.T) {
     		"filterValue": "> = 49",
     		"aggregator": "sum"
     	}]
-	}`, hashMapStartTime["ts1_2TsdbQueryMem"] - 30)
+	}`, hashMapStartTime["ts1_2TsdbQueryMem"]-30)
 
 	keys, payloadPoints := postAPIQueryAndCheckMem(t, payload, "ts01_2tsdbmem", 1, 102, 0, 1, 2, hashMapMem["ts1_2TsdbQueryMem"], hashMapMem["ts1_2TsdbQueryMem2"])
 	assert.Equal(t, "host", payloadPoints[0].AggTags[0])
@@ -3708,7 +3651,7 @@ func TestTsdbQueryMemFilterValuesGreaterThanEqualTo(t *testing.T) {
 	count := 0.0
 	for _, key := range keys {
 
-		assert.Exactly(t, i, payloadPoints[0].Dps[key])
+		assert.Exactly(t, i, float32(payloadPoints[0].Dps[key].(float64)))
 		count++
 
 		if count == 2 {
@@ -3732,7 +3675,7 @@ func TestTsdbQueryMemFilterValuesLessThan(t *testing.T) {
     		"filterValue": "<50",
     		"aggregator": "sum"
     	}]
-	}`, hashMapStartTime["ts1_2TsdbQueryMem"] - 30)
+	}`, hashMapStartTime["ts1_2TsdbQueryMem"]-30)
 
 	keys, payloadPoints := postAPIQueryAndCheckMem(t, payload, "ts01_2tsdbmem", 1, 100, 0, 1, 2, hashMapMem["ts1_2TsdbQueryMem"], hashMapMem["ts1_2TsdbQueryMem2"])
 	assert.Equal(t, "host", payloadPoints[0].AggTags[0])
@@ -3742,7 +3685,7 @@ func TestTsdbQueryMemFilterValuesLessThan(t *testing.T) {
 	count := 0
 	for _, key := range keys {
 
-		assert.Exactly(t, i, payloadPoints[0].Dps[key])
+		assert.Exactly(t, i, float32(payloadPoints[0].Dps[key].(float64)))
 		count++
 
 		if count == 2 {
@@ -3766,7 +3709,7 @@ func TestTsdbQueryMemFilterValuesLessThanEqualTo(t *testing.T) {
     		"filterValue": "<=50",
     		"aggregator": "sum"
     	}]
-	}`, hashMapStartTime["ts1_2TsdbQueryMem"] - 30)
+	}`, hashMapStartTime["ts1_2TsdbQueryMem"]-30)
 
 	keys, payloadPoints := postAPIQueryAndCheckMem(t, payload, "ts01_2tsdbmem", 1, 102, 0, 1, 2, hashMapMem["ts1_2TsdbQueryMem"], hashMapMem["ts1_2TsdbQueryMem2"])
 	assert.Equal(t, "host", payloadPoints[0].AggTags[0])
@@ -3776,7 +3719,7 @@ func TestTsdbQueryMemFilterValuesLessThanEqualTo(t *testing.T) {
 	count := 0
 	for _, key := range keys {
 
-		assert.Exactly(t, i, payloadPoints[0].Dps[key])
+		assert.Exactly(t, i, float32(payloadPoints[0].Dps[key].(float64)))
 		count++
 
 		if count == 2 {
@@ -3800,7 +3743,7 @@ func TestTsdbQueryMemFilterValuesEqualTo(t *testing.T) {
     		"filterValue": "==50",
     		"aggregator": "sum"
     	}]
-	}`, hashMapStartTime["ts1_2TsdbQueryMem"] - 30)
+	}`, hashMapStartTime["ts1_2TsdbQueryMem"]-30)
 
 	keys, payloadPoints := postAPIQueryAndCheckMem(t, payload, "ts01_2tsdbmem", 1, 2, 0, 1, 2, hashMapMem["ts1_2TsdbQueryMem"], hashMapMem["ts1_2TsdbQueryMem2"])
 	assert.Equal(t, "host", payloadPoints[0].AggTags[0])
@@ -3809,7 +3752,7 @@ func TestTsdbQueryMemFilterValuesEqualTo(t *testing.T) {
 	dateStart := hashMapStartTime["ts1_2TsdbQueryMem"] + 3000 - 30
 	for _, key := range keys {
 
-		assert.Exactly(t, i, payloadPoints[0].Dps[key])
+		assert.Exactly(t, i, float32(payloadPoints[0].Dps[key].(float64)))
 		assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 		dateStart += 30
 	}
@@ -3839,7 +3782,7 @@ func TestTsdbQueryMemRateTrueRateOptionsFalse(t *testing.T) {
 	for _, key := range keys {
 
 		calc := (((i + 1.0) - i) / (float32((dateStart + 60) - dateStart)))
-		assert.Exactly(t, calc, payloadPoints[0].Dps[key])
+		assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
 
 		dateStart += 60
 		assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
@@ -3873,7 +3816,7 @@ func TestTsdbQueryMemRateTrueAndMergeRateOptionsFalse(t *testing.T) {
 
 		// Rate: (v2 - v1) / (t2 - t1)
 		calc := ((((i + 1) + (j + 5)) - (i + j)) / (float32((dateStart + 60) - dateStart)))
-		assert.Exactly(t, calc, payloadPoints[0].Dps[key])
+		assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
 		i++
 		j += 5
 
@@ -3908,12 +3851,12 @@ func TestTsdbQueryMemRateTrueDownsampleAndMergeRateOptionsFalse(t *testing.T) {
 	for _, key := range keys {
 
 		// Rate: (v2 - v1) / (t2 - t1)
-		calc := ((((i + 3) + (i + 3) + 1 + (i + 3) + 2) / 3 +
-			((j + 15) + (j + 15) + 5 + (j + 15) + 10) / 3) -
-			((i + i + 1 + i + 2) / 3 +
-				(j + j + 5 + j + 10) / 3)) /
+		calc := ((((i+3)+(i+3)+1+(i+3)+2)/3 +
+			((j+15)+(j+15)+5+(j+15)+10)/3) -
+			((i+i+1+i+2)/3 +
+				(j+j+5+j+10)/3)) /
 			(float32((dateStart + 180) - dateStart))
-		assert.Exactly(t, calc, payloadPoints[0].Dps[key])
+		assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
 		i += 3
 		j += 15
 
@@ -3938,7 +3881,7 @@ func TestTsdbQueryMemRateFillNone(t *testing.T) {
 			},
     		"aggregator": "sum"
     	}]
-	}`, hashMapStartTime["ts9_1TsdbQueryMem"], hashMapStartTime["ts9_1TsdbQueryMem"] + 5350)
+	}`, hashMapStartTime["ts9_1TsdbQueryMem"], hashMapStartTime["ts9_1TsdbQueryMem"]+5350)
 
 	keys, payloadPoints := postAPIQueryAndCheckMem(t, payload, "ts09_1tsdbmem", 1, 9, 0, 1, 2, hashMapMem["ts9_1TsdbQueryMem2"], hashMapMem["ts9_1TsdbQueryMem4"])
 	assert.Equal(t, "host", payloadPoints[0].AggTags[0])
@@ -3949,9 +3892,9 @@ func TestTsdbQueryMemRateFillNone(t *testing.T) {
 
 		if i < 12 || i > 15 {
 			//sum := i + 2 + j + 2
-			//assert.Exactly(t, sum, payloadPoints[0].Dps[key])
-			calc := (((((i + 3) + (i + 3) + 1 + (i + 3) + 2) / 3 + ((j + 3) + (j + 3) + 1 + (j + 3) + 2) / 3) - ((i + i + 1 + i + 2) / 3 + (j + j + 1 + j + 2) / 3)) / (float32((dateStart + 180) - dateStart)))
-			assert.Exactly(t, calc, payloadPoints[0].Dps[key])
+			//assert.Exactly(t, sum, float32(payloadPoints[0].Dps[key].(float64)))
+			calc := (((((i+3)+(i+3)+1+(i+3)+2)/3 + ((j+3)+(j+3)+1+(j+3)+2)/3) - ((i+i+1+i+2)/3 + (j+j+1+j+2)/3)) / (float32((dateStart + 180) - dateStart)))
+			assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
 
 			assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 			dateStart += 180
@@ -3960,9 +3903,9 @@ func TestTsdbQueryMemRateFillNone(t *testing.T) {
 			i = 75
 			j = 75
 			//sum := i + 2 + j + 2
-			//assert.Exactly(t, sum, payloadPoints[0].Dps[key])
-			calc := (((((i + 3) + (i + 3) + 1 + (i + 3) + 2) / 3 + ((j + 3) + (j + 3) + 1 + (j + 3) + 2) / 3) - ((i + i + 1 + i + 2) / 3 + (j + j + 1 + j + 2) / 3)) / (float32((dateStart + 180) - dateStart)))
-			assert.Exactly(t, calc, payloadPoints[0].Dps[key])
+			//assert.Exactly(t, sum, float32(payloadPoints[0].Dps[key].(float64)))
+			calc := (((((i+3)+(i+3)+1+(i+3)+2)/3 + ((j+3)+(j+3)+1+(j+3)+2)/3) - ((i+i+1+i+2)/3 + (j+j+1+j+2)/3)) / (float32((dateStart + 180) - dateStart)))
+			assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
 
 			dateStart = hashMapStartTime["ts9_1TsdbQueryMem"] + (60 * 75)
 			assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
@@ -3989,7 +3932,7 @@ func TestTsdbQueryMemRateFillZero(t *testing.T) {
 			},
     		"aggregator": "sum"
     	}]
-	}`, hashMapStartTime["ts9_1TsdbQueryMem"], hashMapStartTime["ts9_1TsdbQueryMem"] + 5350)
+	}`, hashMapStartTime["ts9_1TsdbQueryMem"], hashMapStartTime["ts9_1TsdbQueryMem"]+5350)
 
 	keys, payloadPoints := postAPIQueryAndCheckMem(t, payload, "ts09_1tsdbmem", 1, 29, 0, 1, 2, hashMapMem["ts9_1TsdbQueryMem2"], hashMapMem["ts9_1TsdbQueryMem4"])
 	assert.Equal(t, "host", payloadPoints[0].AggTags[0])
@@ -4004,19 +3947,19 @@ func TestTsdbQueryMemRateFillZero(t *testing.T) {
 	for _, key := range keys {
 
 		if i < 12 || i >= 75 {
-			calc := (((((i + 3) + (i + 3) + 1 + (i + 3) + 2) / 3 + ((j + 3) + (j + 3) + 1 + (j + 3) + 2) / 3) - ((i + i + 1 + i + 2) / 3 + (j + j + 1 + j + 2) / 3)) / (float32((dateStart + 180) - dateStart)))
-			assert.Exactly(t, calc, payloadPoints[0].Dps[key])
+			calc := (((((i+3)+(i+3)+1+(i+3)+2)/3 + ((j+3)+(j+3)+1+(j+3)+2)/3) - ((i+i+1+i+2)/3 + (j+j+1+j+2)/3)) / (float32((dateStart + 180) - dateStart)))
+			assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
 
 		} else if i == 12 {
-			calc := ((0 - ((i + i + 1 + i + 2) / 3 + (j + j + 1 + j + 2) / 3)) / (float32((dateStart + 180) - dateStart)))
-			assert.Exactly(t, calc, payloadPoints[0].Dps[key])
+			calc := ((0 - ((i+i+1+i+2)/3 + (j+j+1+j+2)/3)) / (float32((dateStart + 180) - dateStart)))
+			assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
 
 		} else if i == 72 {
-			calc := (((((i + 3) + (i + 3) + 1 + (i + 3) + 2) / 3 + ((j + 3) + (j + 3) + 1 + (j + 3) + 2) / 3) - 0) / (float32((dateStart + 180) - dateStart)))
-			assert.Exactly(t, calc, payloadPoints[0].Dps[key])
+			calc := (((((i+3)+(i+3)+1+(i+3)+2)/3 + ((j+3)+(j+3)+1+(j+3)+2)/3) - 0) / (float32((dateStart + 180) - dateStart)))
+			assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
 
 		} else {
-			assert.Exactly(t, float32(0.0), payloadPoints[0].Dps[key])
+			assert.Exactly(t, float32(0.0), float32(payloadPoints[0].Dps[key].(float64)))
 		}
 		dateStart += 180
 		assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
@@ -4041,14 +3984,14 @@ func TestTsdbQueryMemRateFillNull(t *testing.T) {
 			},
     		"aggregator": "sum"
     	}]
-	}`, hashMapStartTime["ts9_1TsdbQueryMem"], hashMapStartTime["ts9_1TsdbQueryMem"] + 5350)
+	}`, hashMapStartTime["ts9_1TsdbQueryMem"], hashMapStartTime["ts9_1TsdbQueryMem"]+5350)
 
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/api/query", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/api/query", []byte(payload))
 	if err != nil {
 		t.Error(err)
 		t.SkipNow()
 	}
-	payloadPoints := []PayloadTsdbNullQueryMem{}
+	payloadPoints := []tools.ResponseQuery{}
 
 	err = json.Unmarshal(response, &payloadPoints)
 	if err != nil {
@@ -4095,7 +4038,7 @@ func TestTsdbQueryMemRateFillNull(t *testing.T) {
 	for _, key := range keys {
 
 		if i < 12 || i >= 75 {
-			calc := (((((i + 3) + (i + 3) + 1 + (i + 3) + 2) / 3 + ((j + 3) + (j + 3) + 1 + (j + 3) + 2) / 3) - ((i + i + 1 + i + 2) / 3 + (j + j + 1 + j + 2) / 3)) / (float32((dateStart + 180) - dateStart)))
+			calc := (((((i+3)+(i+3)+1+(i+3)+2)/3 + ((j+3)+(j+3)+1+(j+3)+2)/3) - ((i+i+1+i+2)/3 + (j+j+1+j+2)/3)) / (float32((dateStart + 180) - dateStart)))
 			assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
 
 		} else {
@@ -4124,14 +4067,14 @@ func TestTsdbQueryMemRateFillNan(t *testing.T) {
 			},
     		"aggregator": "sum"
     	}]
-	}`, hashMapStartTime["ts9_1TsdbQueryMem"], hashMapStartTime["ts9_1TsdbQueryMem"] + 5350)
+	}`, hashMapStartTime["ts9_1TsdbQueryMem"], hashMapStartTime["ts9_1TsdbQueryMem"]+5350)
 
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/api/query", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/api/query", []byte(payload))
 	if err != nil {
 		t.Error(err)
 		t.SkipNow()
 	}
-	payloadPoints := []PayloadTsdbNullQueryMem{}
+	payloadPoints := []tools.ResponseQuery{}
 
 	err = json.Unmarshal(response, &payloadPoints)
 	if err != nil {
@@ -4178,11 +4121,11 @@ func TestTsdbQueryMemRateFillNan(t *testing.T) {
 	for _, key := range keys {
 
 		if i < 12 || i >= 75 {
-			calc := (((((i + 3) + (i + 3) + 1 + (i + 3) + 2) / 3 + ((j + 3) + (j + 3) + 1 + (j + 3) + 2) / 3) - ((i + i + 1 + i + 2) / 3 + (j + j + 1 + j + 2) / 3)) / (float32((dateStart + 180) - dateStart)))
+			calc := (((((i+3)+(i+3)+1+(i+3)+2)/3 + ((j+3)+(j+3)+1+(j+3)+2)/3) - ((i+i+1+i+2)/3 + (j+j+1+j+2)/3)) / (float32((dateStart + 180) - dateStart)))
 			assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
 
 		} else {
-			assert.Exactly(t, "NaN", payloadPoints[0].Dps[key])
+			assert.Exactly(t, "NaN", payloadPoints[0].Dps[key].(string))
 		}
 		dateStart += 180
 		assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
@@ -4209,7 +4152,7 @@ func TestTsdbQueryMemOrderDownsampleMergeRateAndFilterValues(t *testing.T) {
     		"aggregator": "sum",
     		"order":["filterValue","downsample","aggregation","rate"]
     	}]
-	}`, hashMapStartTime["ts7_2TsdbQueryMem"], hashMapStartTime["ts7_2TsdbQueryMem"] + 5350)
+	}`, hashMapStartTime["ts7_2TsdbQueryMem"], hashMapStartTime["ts7_2TsdbQueryMem"]+5350)
 
 	keys, payloadPoints := postAPIQueryAndCheckMem(t, payload, "ts07_2tsdbmem", 1, 29, 0, 1, 2, hashMapMem["ts7_2TsdbQueryMem"], hashMapMem["ts7_2TsdbQueryMem2"])
 	assert.Equal(t, "host", payloadPoints[0].AggTags[0])
@@ -4229,16 +4172,16 @@ func TestTsdbQueryMemOrderDownsampleMergeRateAndFilterValues(t *testing.T) {
 		//first point
 		if point == 1 {
 			calc := (10 / (float32((dateStart + 180) - dateStart)))
-			assert.Exactly(t, calc, payloadPoints[0].Dps[key])
+			assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
 			point++
 			//second point
 		} else if point == 2 {
-			calc := (((((i + 3) + (i + 3) + 1 + (i + 3) + 2) / 3 + ((j + 15) + (j + 15) + 5 + (j + 15) + 10) / 3) - ((j + j + 5 + j + 10) / 3)) / (float32((dateStart + 180) - dateStart)))
-			assert.Exactly(t, calc, payloadPoints[0].Dps[key])
+			calc := (((((i+3)+(i+3)+1+(i+3)+2)/3 + ((j+15)+(j+15)+5+(j+15)+10)/3) - ((j + j + 5 + j + 10) / 3)) / (float32((dateStart + 180) - dateStart)))
+			assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
 			point++
 		} else {
-			calc := (((((i + 3) + (i + 3) + 1 + (i + 3) + 2) / 3 + ((j + 15) + (j + 15) + 5 + (j + 15) + 10) / 3) - ((i + i + 1 + i + 2) / 3 + (j + j + 5 + j + 10) / 3)) / (float32((dateStart + 180) - dateStart)))
-			assert.Exactly(t, calc, payloadPoints[0].Dps[key])
+			calc := (((((i+3)+(i+3)+1+(i+3)+2)/3 + ((j+15)+(j+15)+5+(j+15)+10)/3) - ((i+i+1+i+2)/3 + (j+j+5+j+10)/3)) / (float32((dateStart + 180) - dateStart)))
+			assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
 
 		}
 		i += 3
@@ -4266,7 +4209,7 @@ func TestTsdbQueryMemOrderDownsampleRateAndMerge(t *testing.T) {
     		"aggregator": "sum",
     		"order":["downsample","rate","aggregation"]
     	}]
-	}`, hashMapStartTime["ts7_2TsdbQueryMem"], hashMapStartTime["ts7_2TsdbQueryMem"] + 5350)
+	}`, hashMapStartTime["ts7_2TsdbQueryMem"], hashMapStartTime["ts7_2TsdbQueryMem"]+5350)
 
 	keys, payloadPoints := postAPIQueryAndCheckMem(t, payload, "ts07_2tsdbmem", 1, 29, 0, 1, 2, hashMapMem["ts7_2TsdbQueryMem"], hashMapMem["ts7_2TsdbQueryMem2"])
 	assert.Equal(t, "host", payloadPoints[0].AggTags[0])
@@ -4281,9 +4224,9 @@ func TestTsdbQueryMemOrderDownsampleRateAndMerge(t *testing.T) {
 		// Rate: (v2 - v1) / (t2 - t1)
 		// Downsample: 3min
 		// DefaultOrder:	Downsample - Rate - Merge
-		calc := (((((i + 3) + (i + 3) + 1 + (i + 3) + 2) / 3) - (i + i + 1 + i + 2) / 3) / (float32((dateStart + 180) - dateStart))) +
-			(((((j + 15) + (j + 15) + 5 + (j + 15) + 10) / 3) - (j + j + 5 + j + 10) / 3) / (float32((dateStart + 180) - dateStart)))
-		assert.Exactly(t, calc, payloadPoints[0].Dps[key])
+		calc := (((((i + 3) + (i + 3) + 1 + (i + 3) + 2) / 3) - (i+i+1+i+2)/3) / (float32((dateStart + 180) - dateStart))) +
+			(((((j + 15) + (j + 15) + 5 + (j + 15) + 10) / 3) - (j+j+5+j+10)/3) / (float32((dateStart + 180) - dateStart)))
+		assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
 		i += 3
 		j += 15
 
@@ -4309,7 +4252,7 @@ func TestTsdbQueryMemOrderMergeDownsampleAndRate(t *testing.T) {
     		"aggregator": "sum",
     		"order":["aggregation","downsample","rate"]
     	}]
-	}`, hashMapStartTime["ts7_2TsdbQueryMem"], hashMapStartTime["ts7_2TsdbQueryMem"] + 5350)
+	}`, hashMapStartTime["ts7_2TsdbQueryMem"], hashMapStartTime["ts7_2TsdbQueryMem"]+5350)
 
 	keys, payloadPoints := postAPIQueryAndCheckMem(t, payload, "ts07_2tsdbmem", 1, 29, 0, 1, 2, hashMapMem["ts7_2TsdbQueryMem"], hashMapMem["ts7_2TsdbQueryMem2"])
 	assert.Equal(t, "host", payloadPoints[0].AggTags[0])
@@ -4324,8 +4267,8 @@ func TestTsdbQueryMemOrderMergeDownsampleAndRate(t *testing.T) {
 		// Rate: (v2 - v1) / (t2 - t1)
 		// Downsample: 3min
 		// DefaultOrder: Merge - Downsample - Rate
-		calc := ((((i + 3 + j + 15) + (i + 3 + 1 + j + 15 + 5) + (i + 3 + 2 + j + 15 + 10)) / 6 - ((i + j) + (i + 1 + j + 5) + (i + 2 + j + 10)) / 6) / (float32((dateStart + 180) - dateStart)))
-		assert.Exactly(t, calc, payloadPoints[0].Dps[key])
+		calc := ((((i+3+j+15)+(i+3+1+j+15+5)+(i+3+2+j+15+10))/6 - ((i+j)+(i+1+j+5)+(i+2+j+10))/6) / (float32((dateStart + 180) - dateStart)))
+		assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
 		i += 3
 		j += 15
 
@@ -4351,7 +4294,7 @@ func TestTsdbQueryMemOrderMergeRateAndDownsample(t *testing.T) {
     		"aggregator": "sum",
     		"order":["aggregation","rate","downsample"]
     	}]
-	}`, hashMapStartTime["ts7_2TsdbQueryMem"], hashMapStartTime["ts7_2TsdbQueryMem"] + 5350)
+	}`, hashMapStartTime["ts7_2TsdbQueryMem"], hashMapStartTime["ts7_2TsdbQueryMem"]+5350)
 
 	keys, payloadPoints := postAPIQueryAndCheckMem(t, payload, "ts07_2tsdbmem", 1, 30, 0, 1, 2, hashMapMem["ts7_2TsdbQueryMem"], hashMapMem["ts7_2TsdbQueryMem2"])
 	assert.Equal(t, "host", payloadPoints[0].AggTags[0])
@@ -4374,7 +4317,7 @@ func TestTsdbQueryMemOrderMergeRateAndDownsample(t *testing.T) {
 				(((i + 2) - (j + 5)) / 59) +
 				(((j + 10) - (i + 2)) / 1)) / 5
 
-			assert.Exactly(t, calc, payloadPoints[0].Dps[key])
+			assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
 			i += 2
 			j += 10
 
@@ -4388,9 +4331,9 @@ func TestTsdbQueryMemOrderMergeRateAndDownsample(t *testing.T) {
 				(((i + 2) - (j + 5)) / 59) +
 				(((j + 10) - (i + 2)) / 1) +
 				(((i + 3) - (j + 10)) / 59) +
-				((j + 15) - (i + 3) / 1)) / 6
+				((j + 15) - (i+3)/1)) / 6
 
-			assert.Exactly(t, calc, payloadPoints[0].Dps[key])
+			assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
 			i += 3
 			j += 15
 
@@ -4423,7 +4366,7 @@ func TestTsdbQueryMemOrderMergeRateAndDownsample(t *testing.T) {
 //		t.Error(err)
 //		t.SkipNow()
 //	}
-//	payloadPoints := []PayloadTsdbQueryMem{}
+//	payloadPoints := []tools.ResponseQuery{}
 //
 //	err = json.Unmarshal(response, &payloadPoints)
 //
@@ -4472,7 +4415,7 @@ func TestTsdbQueryMemOrderMergeRateAndDownsample(t *testing.T) {
 //			(((i + 2) - (i + 1)) / (float64(dateStart+120) - float64(dateStart+60))) + (((j + 10) - (j + 5)) / (float64(dateStart+120) - float64(dateStart+60))) +
 //			(((i + 3) - (i + 2)) / (float64(dateStart+180) - float64(dateStart+120))) + (((j + 15) - (j + 10)) / (float64(dateStart+180) - float64(dateStart+120)))) / 6
 //
-//		assert.Exactly(t, calc, payloadPoints[0].Dps[key])
+//		assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
 //		i += 1
 //		j += 15
 //
@@ -4503,7 +4446,7 @@ func TestTsdbQueryMemOrderMergeRateAndDownsample(t *testing.T) {
 //		t.Error(err)
 //		t.SkipNow()
 //	}
-//	payloadPoints := []PayloadTsdbQueryMem{}
+//	payloadPoints := []tools.ResponseQuery{}
 //
 //	err = json.Unmarshal(response, &payloadPoints)
 //
@@ -4555,7 +4498,7 @@ func TestTsdbQueryMemOrderMergeRateAndDownsample(t *testing.T) {
 //				(((j+10)-(j+5))/(float64(dateStart+120)-float64(dateStart+60)))+
 //				(((j+15)-(j+10))/(float64(dateStart+180)-float64(dateStart+120))))/3)
 //
-//		assert.Exactly(t, calc, payloadPoints[0].Dps[key])
+//		assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
 //		i += 1
 //		j += 15
 //
@@ -4581,7 +4524,7 @@ func TestTsdbQueryMemDefaultOrder(t *testing.T) {
 			},
     		"aggregator": "sum"
     	}]
-	}`, hashMapStartTime["ts7_2TsdbQueryMem"], hashMapStartTime["ts7_2TsdbQueryMem"] + 5350)
+	}`, hashMapStartTime["ts7_2TsdbQueryMem"], hashMapStartTime["ts7_2TsdbQueryMem"]+5350)
 
 	keys, payloadPoints := postAPIQueryAndCheckMem(t, payload, "ts07_2tsdbmem", 1, 29, 0, 1, 2, hashMapMem["ts7_2TsdbQueryMem"], hashMapMem["ts7_2TsdbQueryMem2"])
 	assert.Equal(t, "host", payloadPoints[0].AggTags[0])
@@ -4601,16 +4544,16 @@ func TestTsdbQueryMemDefaultOrder(t *testing.T) {
 		//first point
 		if point == 1 {
 			calc := (10 / (float32((dateStart + 180) - dateStart)))
-			assert.Exactly(t, calc, payloadPoints[0].Dps[key])
+			assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
 			point++
 			//second point
 		} else if point == 2 {
-			calc := ((((i + 3) + (i + 3) + 1 + (i + 3) + 2) / 3 + ((j + 15) + (j + 15) + 5 + (j + 15) + 10) / 3) - ((j + j + 5 + j + 10) / 3)) / (float32((dateStart + 180) - dateStart))
-			assert.Exactly(t, calc, payloadPoints[0].Dps[key])
+			calc := ((((i+3)+(i+3)+1+(i+3)+2)/3 + ((j+15)+(j+15)+5+(j+15)+10)/3) - ((j + j + 5 + j + 10) / 3)) / (float32((dateStart + 180) - dateStart))
+			assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
 			point++
 		} else {
-			calc := ((((i + 3) + (i + 3) + 1 + (i + 3) + 2) / 3 + ((j + 15) + (j + 15) + 5 + (j + 15) + 10) / 3) - ((i + i + 1 + i + 2) / 3 + (j + j + 5 + j + 10) / 3)) / (float32((dateStart + 180) - dateStart))
-			assert.Exactly(t, calc, payloadPoints[0].Dps[key])
+			calc := ((((i+3)+(i+3)+1+(i+3)+2)/3 + ((j+15)+(j+15)+5+(j+15)+10)/3) - ((i+i+1+i+2)/3 + (j+j+5+j+10)/3)) / (float32((dateStart + 180) - dateStart))
+			assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
 
 		}
 		i += 3
@@ -4638,7 +4581,7 @@ func TestTsdbQueryMemOrderFunctionNotUsed(t *testing.T) {
     		"aggregator": "sum",
     		"order":["aggregation","rate","filterValue","downsample"]
     	}]
-	}`, hashMapStartTime["ts7_2TsdbQueryMem"], hashMapStartTime["ts7_2TsdbQueryMem"] + 5350)
+	}`, hashMapStartTime["ts7_2TsdbQueryMem"], hashMapStartTime["ts7_2TsdbQueryMem"]+5350)
 
 	keys, payloadPoints := postAPIQueryAndCheckMem(t, payload, "ts07_2tsdbmem", 1, 30, 0, 1, 2, hashMapMem["ts7_2TsdbQueryMem"], hashMapMem["ts7_2TsdbQueryMem2"])
 	assert.Equal(t, "host", payloadPoints[0].AggTags[0])
@@ -4661,7 +4604,7 @@ func TestTsdbQueryMemOrderFunctionNotUsed(t *testing.T) {
 				(((i + 2) - (j + 5)) / 59) +
 				(((j + 10) - (i + 2)) / 1)) / 5
 
-			assert.Exactly(t, calc, payloadPoints[0].Dps[key])
+			assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
 			i += 2
 			j += 10
 
@@ -4675,9 +4618,9 @@ func TestTsdbQueryMemOrderFunctionNotUsed(t *testing.T) {
 				(((i + 2) - (j + 5)) / 59) +
 				(((j + 10) - (i + 2)) / 1) +
 				(((i + 3) - (j + 10)) / 59) +
-				((j + 15) - (i + 3) / 1)) / 6
+				((j + 15) - (i+3)/1)) / 6
 
-			assert.Exactly(t, calc, payloadPoints[0].Dps[key])
+			assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
 			i += 3
 			j += 15
 
@@ -4699,13 +4642,13 @@ func TestTsdbQueryMemConcurrentPoints(t *testing.T) {
     		"metric": "ts16tsdbmem",
     		"aggregator": "sum"
     	}]
-	}`, dateStart, dateStart + 1560)
+	}`, dateStart, dateStart+1560)
 
 	keys, payloadPoints := postAPIQueryAndCheckMem(t, payload, "ts16tsdbmem", 1, 27, 1, 0, 1, hashMapMem["ts16TsdbQueryMem"])
 
 	for i, key := range keys {
 
-		assert.Exactly(t, float32(i), payloadPoints[0].Dps[key])
+		assert.Exactly(t, float32(i), float32(payloadPoints[0].Dps[key].(float64)))
 		assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 		dateStart += 60
 	}
@@ -4723,13 +4666,13 @@ func TestTsdbQueryMemGetBeforePosting(t *testing.T) {
     		"metric": "ts17tsdbmem",
     		"aggregator": "sum"
     	}]
-	}`, dateStart, dateStart + 7320)
+	}`, dateStart, dateStart+7320)
 
 	keys, payloadPoints := postAPIQueryAndCheckMem(t, payload, "ts17tsdbmem", 1, 3, 1, 0, 1, hashMapMem["ts17TsdbQueryMem"])
 
 	for i, key := range keys {
 
-		assert.Exactly(t, float32(i), payloadPoints[0].Dps[key])
+		assert.Exactly(t, i, int(payloadPoints[0].Dps[key].(float64)))
 		assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 		dateStart += 60
 	}
@@ -4742,7 +4685,7 @@ func TestTsdbQueryMemGetBeforePosting(t *testing.T) {
 
 	for i := 3; i < len(keys); i++ {
 
-		assert.Exactly(t, float32(i), payloadPoints[0].Dps[keys[i]])
+		assert.Exactly(t, i, int(payloadPoints[0].Dps[keys[i]].(float64)))
 		assert.Exactly(t, strconv.FormatInt(dateStart, 10), keys[i])
 		dateStart += 60
 
@@ -4753,7 +4696,7 @@ func TestTsdbQueryMemRateTrueRateOptionsTrueCounter(t *testing.T) {
 
 	payload := `{
 		"start": ` + strconv.FormatInt(ts12TsdbQueryMemStartTime, 10) + `,
-		"end": ` + strconv.FormatInt(ts12TsdbQueryMemStartTime + 240, 10) + `,
+		"end": ` + strconv.FormatInt(ts12TsdbQueryMemStartTime+240, 10) + `,
 		"showTSUIDs": true,
 		"queries": [{
     		"metric": "ts12-_/.%&#;tsdb",
@@ -4775,7 +4718,7 @@ func TestTsdbQueryMemRateTrueRateOptionsTrueCounter(t *testing.T) {
 	for _, key := range keys {
 
 		calc := ((i * 10.0) - i) / (float32(dateStart + 60 - dateStart))
-		assert.Exactly(t, calc, payloadPoints[0].Dps[key])
+		assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
 
 		dateStart += 60
 		assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
@@ -4788,7 +4731,7 @@ func TestTsdbQueryMemRateTrueRateOptionsTrueCounterMax(t *testing.T) {
 
 	payload := `{
 		"start": ` + strconv.FormatInt(ts12TsdbQueryMemStartTime, 10) + `,
-		"end": ` + strconv.FormatInt(ts12TsdbQueryMemStartTime + 300, 10) + `,
+		"end": ` + strconv.FormatInt(ts12TsdbQueryMemStartTime+300, 10) + `,
 		"showTSUIDs": true,
 		"queries": [{
     		"metric": "ts12-_/.%&#;tsdb",
@@ -4811,10 +4754,10 @@ func TestTsdbQueryMemRateTrueRateOptionsTrueCounterMax(t *testing.T) {
 	var countermax float32 = 15000.0
 	for _, key := range keys {
 
-		if dateStart < ts12TsdbQueryMemStartTime + (60 * 4) {
+		if dateStart < ts12TsdbQueryMemStartTime+(60*4) {
 
 			calc := ((i * 10.0) - i) / (float32(dateStart + 60 - dateStart))
-			assert.Exactly(t, calc, payloadPoints[0].Dps[key])
+			assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
 
 			dateStart += 60
 			assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
@@ -4822,7 +4765,7 @@ func TestTsdbQueryMemRateTrueRateOptionsTrueCounterMax(t *testing.T) {
 			i = i * 10.0
 		} else {
 			calc := (countermax - i + 1000) / (float32(dateStart + 60 - dateStart))
-			assert.Exactly(t, calc, payloadPoints[0].Dps[key])
+			assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
 
 			dateStart += 60
 			assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
@@ -4834,7 +4777,7 @@ func TestTsdbQueryMemRateTrueRateOptionsTrueResetValue(t *testing.T) {
 
 	payload := `{
 		"start": ` + strconv.FormatInt(ts12TsdbQueryMemStartTime, 10) + `,
-		"end": ` + strconv.FormatInt(ts12TsdbQueryMemStartTime + 300, 10) + `,
+		"end": ` + strconv.FormatInt(ts12TsdbQueryMemStartTime+300, 10) + `,
 		"showTSUIDs": true,
 		"queries": [{
     		"metric": "ts12-_/.%&#;tsdb",
@@ -4856,10 +4799,10 @@ func TestTsdbQueryMemRateTrueRateOptionsTrueResetValue(t *testing.T) {
 	dateStart := ts12TsdbQueryMemStartTime
 	for _, key := range keys {
 
-		if dateStart < ts12TsdbQueryMemStartTime + (60 * 4) {
+		if dateStart < ts12TsdbQueryMemStartTime+(60*4) {
 
 			calc := (((i * 10.0) - i) / (float32((dateStart + 60) - dateStart)))
-			assert.Exactly(t, calc, payloadPoints[0].Dps[key])
+			assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
 
 			dateStart += 60
 			assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
@@ -4867,7 +4810,7 @@ func TestTsdbQueryMemRateTrueRateOptionsTrueResetValue(t *testing.T) {
 			i = i * 10.0
 		} else {
 			var calc float32
-			assert.Exactly(t, calc, payloadPoints[0].Dps[key])
+			assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
 
 			dateStart += 60
 			assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
@@ -4879,7 +4822,7 @@ func TestTsdbQueryMemRateTrueRateOptionsTrueCounterMaxAndResetValue(t *testing.T
 
 	payload := `{
 		"start": ` + strconv.FormatInt(ts12TsdbQueryMemStartTime, 10) + `,
-		"end": ` + strconv.FormatInt(ts12TsdbQueryMemStartTime + 660, 10) + `,
+		"end": ` + strconv.FormatInt(ts12TsdbQueryMemStartTime+660, 10) + `,
 		"showTSUIDs": true,
 		"queries": [{
     		"metric": "ts12-_/.%&#;tsdb",
@@ -4903,33 +4846,33 @@ func TestTsdbQueryMemRateTrueRateOptionsTrueCounterMaxAndResetValue(t *testing.T
 	var countermax float32 = 15000.0
 	for _, key := range keys {
 
-		if dateStart < ts12TsdbQueryMemStartTime + (60 * 4) {
+		if dateStart < ts12TsdbQueryMemStartTime+(60*4) {
 
 			calc := (((i * 10.0) - i) / (float32((dateStart + 60) - dateStart)))
-			assert.Exactly(t, calc, payloadPoints[0].Dps[key])
+			assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
 
 			dateStart += 60
 			assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 
 			i = i * 10.0
-		} else if dateStart < ts12TsdbQueryMemStartTime + (60 * 5) {
+		} else if dateStart < ts12TsdbQueryMemStartTime+(60*5) {
 			calc := ((countermax - i + 1000) / (float32((dateStart + 60) - dateStart)))
-			assert.Exactly(t, calc, payloadPoints[0].Dps[key])
+			assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
 
 			dateStart += 60
 			assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 
-		} else if dateStart < ts12TsdbQueryMemStartTime + (60 * 6) {
+		} else if dateStart < ts12TsdbQueryMemStartTime+(60*6) {
 			var calc float32
-			assert.Exactly(t, calc, payloadPoints[0].Dps[key])
+			assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
 
 			dateStart += 60
 			assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 			i = 1.0
 
-		} else if dateStart < ts12TsdbQueryMemStartTime + (60 * 10) {
+		} else if dateStart < ts12TsdbQueryMemStartTime+(60*10) {
 			calc := (((i * 10.0) - i) / (float32((dateStart + 60) - dateStart)))
-			assert.Exactly(t, calc, payloadPoints[0].Dps[key])
+			assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
 
 			dateStart += 60
 			assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
@@ -4937,7 +4880,7 @@ func TestTsdbQueryMemRateTrueRateOptionsTrueCounterMaxAndResetValue(t *testing.T
 			i = i * 10.0
 		} else {
 			calc := ((countermax - i + 3000.0) / (float32((dateStart + 60) - dateStart)))
-			assert.Exactly(t, calc, payloadPoints[0].Dps[key])
+			assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
 
 			dateStart += 60
 			assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
@@ -4959,9 +4902,9 @@ func TestTsdbQueryMemRateTrueNoPoints(t *testing.T) {
       			"host": "test"
 			}
 		}]
-	}`, hashMapStartTime["ts1TsdbQueryMem"] - 2, hashMapStartTime["ts1TsdbQueryMem"] - 1)
+	}`, hashMapStartTime["ts1TsdbQueryMem"]-2, hashMapStartTime["ts1TsdbQueryMem"]-1)
 
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/api/query", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/api/query", []byte(payload))
 	if err != nil {
 		t.Error(err)
 		t.SkipNow()
@@ -4988,14 +4931,14 @@ func TestTsdbQueryMemFilterGroupByWildcard(t *testing.T) {
         		"groupBy": true
 	      	}]
 	    }]
-	}`, ts13TsdbQueryMemStartTime, ts13TsdbQueryMemStartTime + 1140)
+	}`, ts13TsdbQueryMemStartTime, ts13TsdbQueryMemStartTime+1140)
 
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/api/query", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/api/query", []byte(payload))
 	if err != nil {
 		t.Error(err)
 		t.SkipNow()
 	}
-	payloadPoints := []PayloadTsdbQueryMem{}
+	payloadPoints := []tools.ResponseQuery{}
 
 	err = json.Unmarshal(response, &payloadPoints)
 	if err != nil {
@@ -5041,7 +4984,7 @@ func TestTsdbQueryMemFilterGroupByWildcard(t *testing.T) {
 			dateStart := ts13TsdbQueryMemStartTime
 			for _, key := range keys {
 
-				assert.Exactly(t, value, payloadPoints[i].Dps[key])
+				assert.Exactly(t, value, float32(payloadPoints[i].Dps[key].(float64)))
 
 				assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 				dateStart += 60
@@ -5079,7 +5022,7 @@ func TestTsdbQueryMemFilterGroupByWildcard(t *testing.T) {
 			dateStart := ts13TsdbQueryMemStartTime
 			for _, key := range keys {
 
-				assert.Exactly(t, value, payloadPoints[i].Dps[key])
+				assert.Exactly(t, value, float32(payloadPoints[i].Dps[key].(float64)))
 
 				assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 				dateStart += 60
@@ -5124,7 +5067,7 @@ func TestTsdbQueryMemFilterGroupByWildcard(t *testing.T) {
 			dateStart := ts13TsdbQueryMemStartTime
 			for _, key := range keys {
 
-				assert.Exactly(t, value, payloadPoints[i].Dps[key])
+				assert.Exactly(t, value, float32(payloadPoints[i].Dps[key].(float64)))
 
 				assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 				dateStart += 60
@@ -5157,14 +5100,14 @@ func TestTsdbQueryMemFilterGroupByWildcardPartialName(t *testing.T) {
         		"groupBy": true
 	      	}]
 	    }]
-	}`, ts13TsdbQueryMemStartTime, ts13TsdbQueryMemStartTime + 1140)
+	}`, ts13TsdbQueryMemStartTime, ts13TsdbQueryMemStartTime+1140)
 
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/api/query", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/api/query", []byte(payload))
 	if err != nil {
 		t.Error(err)
 		t.SkipNow()
 	}
-	payloadPoints := []PayloadTsdbQueryMem{}
+	payloadPoints := []tools.ResponseQuery{}
 
 	err = json.Unmarshal(response, &payloadPoints)
 	if err != nil {
@@ -5210,7 +5153,7 @@ func TestTsdbQueryMemFilterGroupByWildcardPartialName(t *testing.T) {
 			dateStart := ts13TsdbQueryMemStartTime
 			for _, key := range keys {
 
-				assert.Exactly(t, value, payloadPoints[i].Dps[key])
+				assert.Exactly(t, value, float32(payloadPoints[i].Dps[key].(float64)))
 
 				assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 				dateStart += 60
@@ -5248,7 +5191,7 @@ func TestTsdbQueryMemFilterGroupByWildcardPartialName(t *testing.T) {
 			dateStart := ts13TsdbQueryMemStartTime
 			for _, key := range keys {
 
-				assert.Exactly(t, value, payloadPoints[i].Dps[key])
+				assert.Exactly(t, value, float32(payloadPoints[i].Dps[key].(float64)))
 
 				assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 				dateStart += 60
@@ -5293,7 +5236,7 @@ func TestTsdbQueryMemFilterGroupByWildcardPartialName(t *testing.T) {
 			dateStart := ts13TsdbQueryMemStartTime
 			for _, key := range keys {
 
-				assert.Exactly(t, value, payloadPoints[i].Dps[key])
+				assert.Exactly(t, value, float32(payloadPoints[i].Dps[key].(float64)))
 
 				assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 				dateStart += 60
@@ -5326,7 +5269,7 @@ func TestTsdbQueryMemFilterGroupByWildcardTagWithDot(t *testing.T) {
         		"groupBy": false
 	      	}]
 	    }]
-	}`, hashMapStartTime["ts1_3TsdbQueryMem"] - 30)
+	}`, hashMapStartTime["ts1_3TsdbQueryMem"]-30)
 
 	keys, payloadPoints := postAPIQueryAndCheckMem(t, payload, "ts01_3tsdbmem", 1, 34, 0, 1, 2, hashMapMem["ts1_3TsdbQueryMem"], hashMapMem["ts1_3TsdbQueryMem2"])
 	assert.Equal(t, "host", payloadPoints[0].AggTags[0])
@@ -5335,7 +5278,7 @@ func TestTsdbQueryMemFilterGroupByWildcardTagWithDot(t *testing.T) {
 	dateStart := hashMapStartTime["ts1_3TsdbQueryMem"] - 30 - 20
 	for _, key := range keys {
 
-		assert.Exactly(t, i + i, payloadPoints[0].Dps[key])
+		assert.Exactly(t, i+i, float32(payloadPoints[0].Dps[key].(float64)))
 		i += 3
 
 		assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
@@ -5360,7 +5303,7 @@ func TestTsdbQueryMemFilterGroupByWildcardTagWithDotPartialName(t *testing.T) {
         		"groupBy": false
 	      	}]
 	    }]
-	}`, hashMapStartTime["ts1_3TsdbQueryMem"] - 30)
+	}`, hashMapStartTime["ts1_3TsdbQueryMem"]-30)
 
 	keys, payloadPoints := postAPIQueryAndCheckMem(t, payload, "ts01_3tsdbmem", 1, 34, 1, 0, 1, hashMapMem["ts1_3TsdbQueryMem2"])
 	assert.Equal(t, "test.2", payloadPoints[0].Tags["host"])
@@ -5369,7 +5312,7 @@ func TestTsdbQueryMemFilterGroupByWildcardTagWithDotPartialName(t *testing.T) {
 	dateStart := hashMapStartTime["ts1_3TsdbQueryMem"] - 30 - 20
 	for _, key := range keys {
 
-		assert.Exactly(t, i, payloadPoints[0].Dps[key])
+		assert.Exactly(t, i, float32(payloadPoints[0].Dps[key].(float64)))
 		i += 3
 
 		assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
@@ -5396,7 +5339,7 @@ func TestTsdbQueryMemFilterGroupByWildcardTagWithoutDot(t *testing.T) {
 	    }]
 	}`, hashMapStartTime["ts1_2TsdbQueryMem"])
 
-	code, response, _ := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/api/query", []byte(payload))
+	code, response, _ := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/api/query", []byte(payload))
 
 	assert.Equal(t, 200, code)
 	assert.Equal(t, "[]", string(response))
@@ -5419,14 +5362,14 @@ func TestTsdbQueryMemFilterGroupByLiteralOr(t *testing.T) {
         		"groupBy": true
 	      	}]
 	    }]
-	}`, ts13TsdbQueryMemStartTime, ts13TsdbQueryMemStartTime + 1140)
+	}`, ts13TsdbQueryMemStartTime, ts13TsdbQueryMemStartTime+1140)
 
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/api/query", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/api/query", []byte(payload))
 	if err != nil {
 		t.Error(err)
 		t.SkipNow()
 	}
-	payloadPoints := []PayloadTsdbQueryMem{}
+	payloadPoints := []tools.ResponseQuery{}
 
 	err = json.Unmarshal(response, &payloadPoints)
 	if err != nil {
@@ -5472,7 +5415,7 @@ func TestTsdbQueryMemFilterGroupByLiteralOr(t *testing.T) {
 			dateStart := ts13TsdbQueryMemStartTime
 			for _, key := range keys {
 
-				assert.Exactly(t, value, payloadPoints[i].Dps[key])
+				assert.Exactly(t, value, float32(payloadPoints[i].Dps[key].(float64)))
 
 				assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 				dateStart += 60
@@ -5510,7 +5453,7 @@ func TestTsdbQueryMemFilterGroupByLiteralOr(t *testing.T) {
 			dateStart := ts13TsdbQueryMemStartTime
 			for _, key := range keys {
 
-				assert.Exactly(t, value, payloadPoints[i].Dps[key])
+				assert.Exactly(t, value, float32(payloadPoints[i].Dps[key].(float64)))
 
 				assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 				dateStart += 60
@@ -5543,14 +5486,14 @@ func TestTsdbQueryMemFilterGroupByNotLiteralOr(t *testing.T) {
         		"groupBy": true
 	      	}]
 	    }]
-	}`, ts13TsdbQueryMemStartTime, ts13TsdbQueryMemStartTime + 1140)
+	}`, ts13TsdbQueryMemStartTime, ts13TsdbQueryMemStartTime+1140)
 
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/api/query", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/api/query", []byte(payload))
 	if err != nil {
 		t.Error(err)
 		t.SkipNow()
 	}
-	payloadPoints := []PayloadTsdbQueryMem{}
+	payloadPoints := []tools.ResponseQuery{}
 
 	err = json.Unmarshal(response, &payloadPoints)
 	if err != nil {
@@ -5591,7 +5534,7 @@ func TestTsdbQueryMemFilterGroupByNotLiteralOr(t *testing.T) {
 	dateStart := ts13TsdbQueryMemStartTime
 	for _, key := range keys {
 
-		assert.Exactly(t, value, payloadPoints[0].Dps[key])
+		assert.Exactly(t, value, float32(payloadPoints[0].Dps[key].(float64)))
 		assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 		dateStart = dateStart + 60
 
@@ -5615,14 +5558,14 @@ func TestTsdbQueryMemFilterGroupByRegexp(t *testing.T) {
         		"groupBy": true
 	      	}]
 	    }]
-	}`, ts13TsdbQueryMemStartTime, ts13TsdbQueryMemStartTime + 1140)
+	}`, ts13TsdbQueryMemStartTime, ts13TsdbQueryMemStartTime+1140)
 
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/api/query", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/api/query", []byte(payload))
 	if err != nil {
 		t.Error(err)
 		t.SkipNow()
 	}
-	payloadPoints := []PayloadTsdbQueryMem{}
+	payloadPoints := []tools.ResponseQuery{}
 
 	err = json.Unmarshal(response, &payloadPoints)
 	if err != nil {
@@ -5668,7 +5611,7 @@ func TestTsdbQueryMemFilterGroupByRegexp(t *testing.T) {
 			dateStart := ts13TsdbQueryMemStartTime
 			for _, key := range keys {
 
-				assert.Exactly(t, value, payloadPoints[i].Dps[key])
+				assert.Exactly(t, value, float32(payloadPoints[i].Dps[key].(float64)))
 
 				assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 				dateStart += 60
@@ -5706,7 +5649,7 @@ func TestTsdbQueryMemFilterGroupByRegexp(t *testing.T) {
 			dateStart := ts13TsdbQueryMemStartTime
 			for _, key := range keys {
 
-				assert.Exactly(t, value, payloadPoints[i].Dps[key])
+				assert.Exactly(t, value, float32(payloadPoints[i].Dps[key].(float64)))
 
 				assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 				dateStart += 60
@@ -5743,7 +5686,7 @@ func TestTsdbQueryMemFilterGroupByRegexp(t *testing.T) {
 			dateStart := ts13TsdbQueryMemStartTime
 			for _, key := range keys {
 
-				assert.Exactly(t, value, payloadPoints[i].Dps[key])
+				assert.Exactly(t, value, float32(payloadPoints[i].Dps[key].(float64)))
 
 				assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 				dateStart += 60
@@ -5776,14 +5719,14 @@ func TestTsdbQueryMemFilterGroupByRegexpNumbers(t *testing.T) {
         		"groupBy": true
 	      	}]
 	    }]
-	}`, ts13TsdbQueryMemStartTime, ts13TsdbQueryMemStartTime + 1140)
+	}`, ts13TsdbQueryMemStartTime, ts13TsdbQueryMemStartTime+1140)
 
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/api/query", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/api/query", []byte(payload))
 	if err != nil {
 		t.Error(err)
 		t.SkipNow()
 	}
-	payloadPoints := []PayloadTsdbQueryMem{}
+	payloadPoints := []tools.ResponseQuery{}
 
 	err = json.Unmarshal(response, &payloadPoints)
 	if err != nil {
@@ -5829,7 +5772,7 @@ func TestTsdbQueryMemFilterGroupByRegexpNumbers(t *testing.T) {
 			dateStart := ts13TsdbQueryMemStartTime
 			for _, key := range keys {
 
-				assert.Exactly(t, value, payloadPoints[i].Dps[key])
+				assert.Exactly(t, value, float32(payloadPoints[i].Dps[key].(float64)))
 
 				assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 				dateStart += 60
@@ -5867,7 +5810,7 @@ func TestTsdbQueryMemFilterGroupByRegexpNumbers(t *testing.T) {
 			dateStart := ts13TsdbQueryMemStartTime
 			for _, key := range keys {
 
-				assert.Exactly(t, value, payloadPoints[i].Dps[key])
+				assert.Exactly(t, value, float32(payloadPoints[i].Dps[key].(float64)))
 
 				assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 				dateStart += 60
@@ -5904,7 +5847,7 @@ func TestTsdbQueryMemFilterGroupByRegexpNumbers(t *testing.T) {
 			dateStart := ts13TsdbQueryMemStartTime
 			for _, key := range keys {
 
-				assert.Exactly(t, value, payloadPoints[i].Dps[key])
+				assert.Exactly(t, value, float32(payloadPoints[i].Dps[key].(float64)))
 
 				assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 				dateStart += 60
@@ -5937,14 +5880,14 @@ func TestTsdbQueryMemFilterGroupByILiteralOr(t *testing.T) {
         		"groupBy": true
 	      	}]
 	    }]
-	}`, ts13TsdbQueryMemStartTime, ts13TsdbQueryMemStartTime + 1140)
+	}`, ts13TsdbQueryMemStartTime, ts13TsdbQueryMemStartTime+1140)
 
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/api/query", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/api/query", []byte(payload))
 	if err != nil {
 		t.Error(err)
 		t.SkipNow()
 	}
-	payloadPoints := []PayloadTsdbQueryMem{}
+	payloadPoints := []tools.ResponseQuery{}
 
 	err = json.Unmarshal(response, &payloadPoints)
 	if err != nil {
@@ -5990,7 +5933,7 @@ func TestTsdbQueryMemFilterGroupByILiteralOr(t *testing.T) {
 			dateStart := ts13TsdbQueryMemStartTime
 			for _, key := range keys {
 
-				assert.Exactly(t, value, payloadPoints[i].Dps[key])
+				assert.Exactly(t, value, float32(payloadPoints[i].Dps[key].(float64)))
 
 				assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 				dateStart += 60
@@ -6028,7 +5971,7 @@ func TestTsdbQueryMemFilterGroupByILiteralOr(t *testing.T) {
 			dateStart := ts13TsdbQueryMemStartTime
 			for _, key := range keys {
 
-				assert.Exactly(t, value, payloadPoints[i].Dps[key])
+				assert.Exactly(t, value, float32(payloadPoints[i].Dps[key].(float64)))
 
 				assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 				dateStart += 60
@@ -6065,7 +6008,7 @@ func TestTsdbQueryMemFilterGroupByILiteralOr(t *testing.T) {
 			dateStart := ts13TsdbQueryMemStartTime
 			for _, key := range keys {
 
-				assert.Exactly(t, value, payloadPoints[i].Dps[key])
+				assert.Exactly(t, value, float32(payloadPoints[i].Dps[key].(float64)))
 
 				assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 				dateStart += 60
@@ -6103,14 +6046,14 @@ func TestTsdbQueryMemFilterGroupByAllEspecificTag(t *testing.T) {
         		"groupBy": false
 	      	}]
 	    }]
-	}`, ts13TsdbQueryMemStartTime, ts13TsdbQueryMemStartTime + 1140)
+	}`, ts13TsdbQueryMemStartTime, ts13TsdbQueryMemStartTime+1140)
 
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/api/query", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/api/query", []byte(payload))
 	if err != nil {
 		t.Error(err)
 		t.SkipNow()
 	}
-	payloadPoints := []PayloadTsdbQueryMem{}
+	payloadPoints := []tools.ResponseQuery{}
 
 	err = json.Unmarshal(response, &payloadPoints)
 	if err != nil {
@@ -6149,7 +6092,7 @@ func TestTsdbQueryMemFilterGroupByAllEspecificTag(t *testing.T) {
 			dateStart := ts13TsdbQueryMemStartTime
 			for _, key := range keys {
 
-				assert.Exactly(t, value, payloadPoints[i].Dps[key])
+				assert.Exactly(t, value, float32(payloadPoints[i].Dps[key].(float64)))
 
 				assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 				dateStart += 60
@@ -6180,7 +6123,7 @@ func TestTsdbQueryMemFilterGroupByAllEspecificTag(t *testing.T) {
 			dateStart := ts13TsdbQueryMemStartTime
 			for _, key := range keys {
 
-				assert.Exactly(t, value, payloadPoints[i].Dps[key])
+				assert.Exactly(t, value, float32(payloadPoints[i].Dps[key].(float64)))
 
 				assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 				dateStart += 60
@@ -6213,7 +6156,7 @@ func TestTsdbQueryMemFilterGroupByAllEspecificTag(t *testing.T) {
 			dateStart := ts13TsdbQueryMemStartTime
 			for _, key := range keys {
 
-				assert.Exactly(t, value, payloadPoints[i].Dps[key])
+				assert.Exactly(t, value, float32(payloadPoints[i].Dps[key].(float64)))
 
 				assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 				dateStart += 60
@@ -6252,14 +6195,14 @@ func TestTsdbQueryMemFilterGroupByIsntTheFirstFilter(t *testing.T) {
         		"groupBy": true
 	      	}]
 	    }]
-	}`, ts13TsdbQueryMemStartTime, ts13TsdbQueryMemStartTime + 1140)
+	}`, ts13TsdbQueryMemStartTime, ts13TsdbQueryMemStartTime+1140)
 
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/api/query", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/api/query", []byte(payload))
 	if err != nil {
 		t.Error(err)
 		t.SkipNow()
 	}
-	payloadPoints := []PayloadTsdbQueryMem{}
+	payloadPoints := []tools.ResponseQuery{}
 
 	err = json.Unmarshal(response, &payloadPoints)
 	if err != nil {
@@ -6298,7 +6241,7 @@ func TestTsdbQueryMemFilterGroupByIsntTheFirstFilter(t *testing.T) {
 			dateStart := ts13TsdbQueryMemStartTime
 			for _, key := range keys {
 
-				assert.Exactly(t, value, payloadPoints[i].Dps[key])
+				assert.Exactly(t, value, float32(payloadPoints[i].Dps[key].(float64)))
 
 				assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 				dateStart += 60
@@ -6329,7 +6272,7 @@ func TestTsdbQueryMemFilterGroupByIsntTheFirstFilter(t *testing.T) {
 			dateStart := ts13TsdbQueryMemStartTime
 			for _, key := range keys {
 
-				assert.Exactly(t, value, payloadPoints[i].Dps[key])
+				assert.Exactly(t, value, float32(payloadPoints[i].Dps[key].(float64)))
 
 				assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 				dateStart += 60
@@ -6362,7 +6305,7 @@ func TestTsdbQueryMemFilterGroupByIsntTheFirstFilter(t *testing.T) {
 			dateStart := ts13TsdbQueryMemStartTime
 			for _, key := range keys {
 
-				assert.Exactly(t, value, payloadPoints[i].Dps[key])
+				assert.Exactly(t, value, float32(payloadPoints[i].Dps[key].(float64)))
 
 				assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 				dateStart += 60
@@ -6401,14 +6344,14 @@ func TestTsdbQueryMemFilterGroupByLiteralOrEspecificTag(t *testing.T) {
         		"groupBy": false
 	      	}]
 	    }]
-	}`, ts13TsdbQueryMemStartTime, ts13TsdbQueryMemStartTime + 1140)
+	}`, ts13TsdbQueryMemStartTime, ts13TsdbQueryMemStartTime+1140)
 
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/api/query", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/api/query", []byte(payload))
 	if err != nil {
 		t.Error(err)
 		t.SkipNow()
 	}
-	payloadPoints := []PayloadTsdbQueryMem{}
+	payloadPoints := []tools.ResponseQuery{}
 
 	err = json.Unmarshal(response, &payloadPoints)
 	if err != nil {
@@ -6447,7 +6390,7 @@ func TestTsdbQueryMemFilterGroupByLiteralOrEspecificTag(t *testing.T) {
 			dateStart := ts13TsdbQueryMemStartTime
 			for _, key := range keys {
 
-				assert.Exactly(t, value, payloadPoints[i].Dps[key])
+				assert.Exactly(t, value, float32(payloadPoints[i].Dps[key].(float64)))
 
 				assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 				dateStart += 60
@@ -6478,7 +6421,7 @@ func TestTsdbQueryMemFilterGroupByLiteralOrEspecificTag(t *testing.T) {
 			dateStart := ts13TsdbQueryMemStartTime
 			for _, key := range keys {
 
-				assert.Exactly(t, value, payloadPoints[i].Dps[key])
+				assert.Exactly(t, value, float32(payloadPoints[i].Dps[key].(float64)))
 
 				assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 				dateStart += 60
@@ -6517,14 +6460,14 @@ func TestTsdbQueryMemFilterGroupByWildcardTwoTags(t *testing.T) {
         		"groupBy": true
 	      	}]
 	    }]
-	}`, ts13TsdbQueryMemStartTime, ts13TsdbQueryMemStartTime + 1140)
+	}`, ts13TsdbQueryMemStartTime, ts13TsdbQueryMemStartTime+1140)
 
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/api/query", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/api/query", []byte(payload))
 	if err != nil {
 		t.Error(err)
 		t.SkipNow()
 	}
-	payloadPoints := []PayloadTsdbQueryMem{}
+	payloadPoints := []tools.ResponseQuery{}
 
 	err = json.Unmarshal(response, &payloadPoints)
 	if err != nil {
@@ -6564,7 +6507,7 @@ func TestTsdbQueryMemFilterGroupByWildcardTwoTags(t *testing.T) {
 			dateStart := ts13TsdbQueryMemStartTime
 			for _, key := range keys {
 
-				assert.Exactly(t, value, payloadPoints[i].Dps[key])
+				assert.Exactly(t, value, float32(payloadPoints[i].Dps[key].(float64)))
 
 				assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 				dateStart += 60
@@ -6596,7 +6539,7 @@ func TestTsdbQueryMemFilterGroupByWildcardTwoTags(t *testing.T) {
 			dateStart := ts13TsdbQueryMemStartTime
 			for _, key := range keys {
 
-				assert.Exactly(t, value, payloadPoints[i].Dps[key])
+				assert.Exactly(t, value, float32(payloadPoints[i].Dps[key].(float64)))
 
 				assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 				dateStart += 60
@@ -6629,7 +6572,7 @@ func TestTsdbQueryMemFilterGroupByWildcardTwoTags(t *testing.T) {
 			dateStart := ts13TsdbQueryMemStartTime
 			for _, key := range keys {
 
-				assert.Exactly(t, value, payloadPoints[i].Dps[key])
+				assert.Exactly(t, value, float32(payloadPoints[i].Dps[key].(float64)))
 
 				assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 				dateStart += 60
@@ -6661,7 +6604,7 @@ func TestTsdbQueryMemFilterGroupByWildcardTwoTags(t *testing.T) {
 			dateStart := ts13TsdbQueryMemStartTime
 			for _, key := range keys {
 
-				assert.Exactly(t, value, payloadPoints[i].Dps[key])
+				assert.Exactly(t, value, float32(payloadPoints[i].Dps[key].(float64)))
 
 				assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 				dateStart += 60
@@ -6693,7 +6636,7 @@ func TestTsdbQueryMemFilterGroupByWildcardTwoTags(t *testing.T) {
 			dateStart := ts13TsdbQueryMemStartTime
 			for _, key := range keys {
 
-				assert.Exactly(t, value, payloadPoints[i].Dps[key])
+				assert.Exactly(t, value, float32(payloadPoints[i].Dps[key].(float64)))
 
 				assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 				dateStart += 60
@@ -6736,14 +6679,14 @@ func TestTsdbQueryMemFilterGroupByWildcardTwoTagsFiltersOutOfOrder1(t *testing.T
         		"groupBy": false
 	      	}]
 	    }]
-	}`, ts13TsdbQueryMemStartTime, ts13TsdbQueryMemStartTime + 1140)
+	}`, ts13TsdbQueryMemStartTime, ts13TsdbQueryMemStartTime+1140)
 
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/api/query", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/api/query", []byte(payload))
 	if err != nil {
 		t.Error(err)
 		t.SkipNow()
 	}
-	payloadPoints := []PayloadTsdbQueryMem{}
+	payloadPoints := []tools.ResponseQuery{}
 
 	err = json.Unmarshal(response, &payloadPoints)
 	if err != nil {
@@ -6783,7 +6726,7 @@ func TestTsdbQueryMemFilterGroupByWildcardTwoTagsFiltersOutOfOrder1(t *testing.T
 			dateStart := ts13TsdbQueryMemStartTime
 			for _, key := range keys {
 
-				assert.Exactly(t, value, payloadPoints[i].Dps[key])
+				assert.Exactly(t, value, float32(payloadPoints[i].Dps[key].(float64)))
 
 				assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 				dateStart += 60
@@ -6815,7 +6758,7 @@ func TestTsdbQueryMemFilterGroupByWildcardTwoTagsFiltersOutOfOrder1(t *testing.T
 			dateStart := ts13TsdbQueryMemStartTime
 			for _, key := range keys {
 
-				assert.Exactly(t, value, payloadPoints[i].Dps[key])
+				assert.Exactly(t, value, float32(payloadPoints[i].Dps[key].(float64)))
 
 				assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 				dateStart += 60
@@ -6848,7 +6791,7 @@ func TestTsdbQueryMemFilterGroupByWildcardTwoTagsFiltersOutOfOrder1(t *testing.T
 			dateStart := ts13TsdbQueryMemStartTime
 			for _, key := range keys {
 
-				assert.Exactly(t, value, payloadPoints[i].Dps[key])
+				assert.Exactly(t, value, float32(payloadPoints[i].Dps[key].(float64)))
 
 				assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 				dateStart += 60
@@ -6888,14 +6831,14 @@ func TestTsdbQueryMemFilterGroupByWildcardTwoTagsFiltersOutOfOrder2(t *testing.T
         		"groupBy": true
 	      	}]
 	    }]
-	}`, ts13TsdbQueryMemStartTime, ts13TsdbQueryMemStartTime + 1140)
+	}`, ts13TsdbQueryMemStartTime, ts13TsdbQueryMemStartTime+1140)
 
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/api/query", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/api/query", []byte(payload))
 	if err != nil {
 		t.Error(err)
 		t.SkipNow()
 	}
-	payloadPoints := []PayloadTsdbQueryMem{}
+	payloadPoints := []tools.ResponseQuery{}
 
 	err = json.Unmarshal(response, &payloadPoints)
 	if err != nil {
@@ -6935,7 +6878,7 @@ func TestTsdbQueryMemFilterGroupByWildcardTwoTagsFiltersOutOfOrder2(t *testing.T
 			dateStart := ts13TsdbQueryMemStartTime
 			for _, key := range keys {
 
-				assert.Exactly(t, value, payloadPoints[i].Dps[key])
+				assert.Exactly(t, value, float32(payloadPoints[i].Dps[key].(float64)))
 
 				assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 				dateStart += 60
@@ -6967,7 +6910,7 @@ func TestTsdbQueryMemFilterGroupByWildcardTwoTagsFiltersOutOfOrder2(t *testing.T
 			dateStart := ts13TsdbQueryMemStartTime
 			for _, key := range keys {
 
-				assert.Exactly(t, value, payloadPoints[i].Dps[key])
+				assert.Exactly(t, value, float32(payloadPoints[i].Dps[key].(float64)))
 
 				assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 				dateStart += 60
@@ -7000,7 +6943,7 @@ func TestTsdbQueryMemFilterGroupByWildcardTwoTagsFiltersOutOfOrder2(t *testing.T
 			dateStart := ts13TsdbQueryMemStartTime
 			for _, key := range keys {
 
-				assert.Exactly(t, value, payloadPoints[i].Dps[key])
+				assert.Exactly(t, value, float32(payloadPoints[i].Dps[key].(float64)))
 
 				assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 				dateStart += 60
@@ -7041,14 +6984,14 @@ func TestTsdbQueryMemFilterGroupByWildcardTwoTagsFiltersOutOfOrder3(t *testing.T
         		"groupBy": true
 	      	}]
 	    }]
-	}`, ts13TsdbQueryMemStartTime, ts13TsdbQueryMemStartTime + 1140)
+	}`, ts13TsdbQueryMemStartTime, ts13TsdbQueryMemStartTime+1140)
 
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/api/query", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/api/query", []byte(payload))
 	if err != nil {
 		t.Error(err)
 		t.SkipNow()
 	}
-	payloadPoints := []PayloadTsdbQueryMem{}
+	payloadPoints := []tools.ResponseQuery{}
 
 	err = json.Unmarshal(response, &payloadPoints)
 	if err != nil {
@@ -7088,7 +7031,7 @@ func TestTsdbQueryMemFilterGroupByWildcardTwoTagsFiltersOutOfOrder3(t *testing.T
 			dateStart := ts13TsdbQueryMemStartTime
 			for _, key := range keys {
 
-				assert.Exactly(t, value, payloadPoints[i].Dps[key])
+				assert.Exactly(t, value, float32(payloadPoints[i].Dps[key].(float64)))
 
 				assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 				dateStart += 60
@@ -7120,7 +7063,7 @@ func TestTsdbQueryMemFilterGroupByWildcardTwoTagsFiltersOutOfOrder3(t *testing.T
 			dateStart := ts13TsdbQueryMemStartTime
 			for _, key := range keys {
 
-				assert.Exactly(t, value, payloadPoints[i].Dps[key])
+				assert.Exactly(t, value, float32(payloadPoints[i].Dps[key].(float64)))
 
 				assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 				dateStart += 60
@@ -7153,7 +7096,7 @@ func TestTsdbQueryMemFilterGroupByWildcardTwoTagsFiltersOutOfOrder3(t *testing.T
 			dateStart := ts13TsdbQueryMemStartTime
 			for _, key := range keys {
 
-				assert.Exactly(t, value, payloadPoints[i].Dps[key])
+				assert.Exactly(t, value, float32(payloadPoints[i].Dps[key].(float64)))
 
 				assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 				dateStart += 60
@@ -7189,14 +7132,14 @@ func TestTsdbQueryMemFilterGroupBySameTagk(t *testing.T) {
         		"groupBy": true
 	      	}]
 	    }]
-	}`, ts13TsdbQueryMemStartTime, ts13TsdbQueryMemStartTime + 1140)
+	}`, ts13TsdbQueryMemStartTime, ts13TsdbQueryMemStartTime+1140)
 
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/api/query", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/api/query", []byte(payload))
 	if err != nil {
 		t.Error(err)
 		t.SkipNow()
 	}
-	payloadPoints := []PayloadTsdbQueryMem{}
+	payloadPoints := []tools.ResponseQuery{}
 
 	err = json.Unmarshal(response, &payloadPoints)
 	if err != nil {
@@ -7238,7 +7181,7 @@ func TestTsdbQueryMemFilterGroupBySameTagk(t *testing.T) {
 	dateStart := ts13TsdbQueryMemStartTime
 	for _, key := range keys {
 
-		assert.Exactly(t, value, payloadPoints[0].Dps[key])
+		assert.Exactly(t, value, float32(payloadPoints[0].Dps[key].(float64)))
 		assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 		dateStart += 60
 
@@ -7268,14 +7211,14 @@ func TestTsdbQueryMemFilterSameTagkOnGroupByAndTags(t *testing.T) {
         		"groupBy": false
 	      	}]
 	    }]
-	}`, ts13TsdbQueryMemStartTime, ts13TsdbQueryMemStartTime + 1140)
+	}`, ts13TsdbQueryMemStartTime, ts13TsdbQueryMemStartTime+1140)
 
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/api/query", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/api/query", []byte(payload))
 	if err != nil {
 		t.Error(err)
 		t.SkipNow()
 	}
-	payloadPoints := []PayloadTsdbQueryMem{}
+	payloadPoints := []tools.ResponseQuery{}
 
 	err = json.Unmarshal(response, &payloadPoints)
 	if err != nil {
@@ -7317,7 +7260,7 @@ func TestTsdbQueryMemFilterSameTagkOnGroupByAndTags(t *testing.T) {
 	dateStart := ts13TsdbQueryMemStartTime
 	for _, key := range keys {
 
-		assert.Exactly(t, value, payloadPoints[0].Dps[key])
+		assert.Exactly(t, value, float32(payloadPoints[0].Dps[key].(float64)))
 		assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
 		dateStart += 60
 
@@ -7343,12 +7286,12 @@ func TestTsdbQueryMemFilterGroupByNoPoints(t *testing.T) {
 	      	}]
 	    }]
 	}`
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/api/query", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/api/query", []byte(payload))
 	if err != nil {
 		t.Error(err)
 		t.SkipNow()
 	}
-	payloadPoints := []PayloadTsdbQueryMem{}
+	payloadPoints := []tools.ResponseQuery{}
 
 	err = json.Unmarshal(response, &payloadPoints)
 	if err != nil {
@@ -7377,12 +7320,12 @@ func TestTsdbQueryMemFilterGroupByTagNotFound(t *testing.T) {
 	      	}]
 	    }]
 	}`
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/api/query", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/api/query", []byte(payload))
 	if err != nil {
 		t.Error(err)
 		t.SkipNow()
 	}
-	payloadPoints := []PayloadTsdbQueryMem{}
+	payloadPoints := []tools.ResponseQuery{}
 
 	err = json.Unmarshal(response, &payloadPoints)
 	if err != nil {
@@ -7414,9 +7357,9 @@ func TestTsdbQueryMemTagsInvalidTagKey(t *testing.T) {
 			}
 		}]
 	}`
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/api/query", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/api/query", []byte(payload))
 
-	payloadError := GrafanaPointsErrorMem{}
+	payloadError := tools.Error{}
 
 	err = json.Unmarshal(response, &payloadError)
 
@@ -7449,9 +7392,9 @@ func TestTsdbQueryMemTagsInvalidTagValue(t *testing.T) {
 			}
 		}]
 	}`
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/api/query", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/api/query", []byte(payload))
 
-	payloadError := GrafanaPointsErrorMem{}
+	payloadError := tools.Error{}
 
 	err = json.Unmarshal(response, &payloadError)
 
@@ -7484,9 +7427,9 @@ func TestTsdbQueryMemTagsInvalidMetric(t *testing.T) {
 			}
 		}]
 	}`
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/api/query", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/api/query", []byte(payload))
 
-	payloadError := GrafanaPointsErrorMem{}
+	payloadError := tools.Error{}
 
 	err = json.Unmarshal(response, &payloadError)
 
@@ -7517,13 +7460,13 @@ func TestTsdbQueryMemInvalidOrderOperation(t *testing.T) {
     		"order":["downsample","aggregation","rate","test"]
     	}]
 	}`
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/api/query", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/api/query", []byte(payload))
 	if err != nil {
 		t.Error(err)
 		t.SkipNow()
 	}
 
-	payloadError := GrafanaPointsErrorMem{}
+	payloadError := tools.Error{}
 
 	err = json.Unmarshal(response, &payloadError)
 
@@ -7554,13 +7497,13 @@ func TestTsdbQueryMemInvalidOrderDownsampleMissing(t *testing.T) {
     		"order":["aggregation","rate"]
     	}]
 	}`
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/api/query", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/api/query", []byte(payload))
 	if err != nil {
 		t.Error(err)
 		t.SkipNow()
 	}
 
-	payloadError := GrafanaPointsErrorMem{}
+	payloadError := tools.Error{}
 
 	err = json.Unmarshal(response, &payloadError)
 
@@ -7591,13 +7534,13 @@ func TestTsdbQueryMemInvalidOrderMergeMissing(t *testing.T) {
     		"order":["downsample","rate"]
     	}]
 	}`
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/api/query", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/api/query", []byte(payload))
 	if err != nil {
 		t.Error(err)
 		t.SkipNow()
 	}
 
-	payloadError := GrafanaPointsErrorMem{}
+	payloadError := tools.Error{}
 
 	err = json.Unmarshal(response, &payloadError)
 
@@ -7628,13 +7571,13 @@ func TestTsdbQueryMemInvalidOrderRateMissing(t *testing.T) {
     		"order":["downsample","aggregation"]
     	}]
 	}`
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/api/query", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/api/query", []byte(payload))
 	if err != nil {
 		t.Error(err)
 		t.SkipNow()
 	}
 
-	payloadError := GrafanaPointsErrorMem{}
+	payloadError := tools.Error{}
 
 	err = json.Unmarshal(response, &payloadError)
 
@@ -7662,13 +7605,13 @@ func TestTsdbQueryMemInvalidOrderFilterValueMissing(t *testing.T) {
     		"order":["downsample","aggregation"]
     	}]
 	}`
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/api/query", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/api/query", []byte(payload))
 	if err != nil {
 		t.Error(err)
 		t.SkipNow()
 	}
 
-	payloadError := GrafanaPointsErrorMem{}
+	payloadError := tools.Error{}
 
 	err = json.Unmarshal(response, &payloadError)
 
@@ -7699,13 +7642,13 @@ func TestTsdbQueryMemInvalidOrderDuplicatedDownsample(t *testing.T) {
     		"order":["aggregation","downsample","downsample","rate"]
     	}]
 	}`
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/api/query", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/api/query", []byte(payload))
 	if err != nil {
 		t.Error(err)
 		t.SkipNow()
 	}
 
-	payloadError := GrafanaPointsErrorMem{}
+	payloadError := tools.Error{}
 
 	err = json.Unmarshal(response, &payloadError)
 
@@ -7737,13 +7680,13 @@ func TestTsdbQueryMemInvalidOrderDuplicatedFilterValue(t *testing.T) {
     		"order":["aggregation","downsample","filterValue","filterValue","rate"]
     	}]
 	}`
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/api/query", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/api/query", []byte(payload))
 	if err != nil {
 		t.Error(err)
 		t.SkipNow()
 	}
 
-	payloadError := GrafanaPointsErrorMem{}
+	payloadError := tools.Error{}
 
 	err = json.Unmarshal(response, &payloadError)
 
@@ -7774,13 +7717,13 @@ func TestTsdbQueryMemInvalidOrderDuplicatedMerge(t *testing.T) {
     		"order":["aggregation","aggregation","downsample","rate"]
     	}]
 	}`
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/api/query", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/api/query", []byte(payload))
 	if err != nil {
 		t.Error(err)
 		t.SkipNow()
 	}
 
-	payloadError := GrafanaPointsErrorMem{}
+	payloadError := tools.Error{}
 
 	err = json.Unmarshal(response, &payloadError)
 
@@ -7811,13 +7754,13 @@ func TestTsdbQueryMemInvalidOrderDuplicatedRate(t *testing.T) {
     		"order":["downsample","aggregation","rate","rate"]
     	}]
 	}`
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/api/query", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/api/query", []byte(payload))
 	if err != nil {
 		t.Error(err)
 		t.SkipNow()
 	}
 
-	payloadError := GrafanaPointsErrorMem{}
+	payloadError := tools.Error{}
 
 	err = json.Unmarshal(response, &payloadError)
 
@@ -7848,12 +7791,12 @@ func TestTsdbQueryMemEmptyOrderOption(t *testing.T) {
     		"order":[""]
     	}]
 	}`
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/api/query", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/api/query", []byte(payload))
 	if err != nil {
 		t.Error(err)
 		t.SkipNow()
 	}
-	payloadError := GrafanaPointsErrorMem{}
+	payloadError := tools.Error{}
 
 	err = json.Unmarshal(response, &payloadError)
 
@@ -7885,9 +7828,9 @@ func TestTsdbQueryMemInvalidRate(t *testing.T) {
 			}
 		}]
 	}`
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/api/query", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/api/query", []byte(payload))
 
-	payloadError := GrafanaPointsErrorMem{}
+	payloadError := tools.Error{}
 
 	err = json.Unmarshal(response, &payloadError)
 
@@ -7920,9 +7863,9 @@ func TestTsdbQueryMemInvalidRateOptionCounter(t *testing.T) {
 			}
 		}]
 	}`
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/api/query", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/api/query", []byte(payload))
 
-	payloadError := GrafanaPointsErrorMem{}
+	payloadError := tools.Error{}
 
 	err = json.Unmarshal(response, &payloadError)
 
@@ -7955,9 +7898,9 @@ func TestTsdbQueryMemInvalidRateOptionCounterMax(t *testing.T) {
 			}
 		}]
 	}`
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/api/query", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/api/query", []byte(payload))
 
-	payloadError := GrafanaPointsErrorMem{}
+	payloadError := tools.Error{}
 
 	err = json.Unmarshal(response, &payloadError)
 
@@ -7990,9 +7933,9 @@ func TestTsdbQueryMemInvalidRateOptionCounterMaxNegative(t *testing.T) {
 			}
 		}]
 	}`
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/api/query", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/api/query", []byte(payload))
 
-	payloadError := GrafanaPointsErrorMem{}
+	payloadError := tools.Error{}
 
 	err = json.Unmarshal(response, &payloadError)
 
@@ -8025,9 +7968,9 @@ func TestTsdbQueryMemInvalidRateOptionResetValue(t *testing.T) {
 			}
 		}]
 	}`
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/api/query", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/api/query", []byte(payload))
 
-	payloadError := GrafanaPointsErrorMem{}
+	payloadError := tools.Error{}
 
 	err = json.Unmarshal(response, &payloadError)
 
@@ -8059,9 +8002,9 @@ func TestTsdbQueryMemInvalidFilterWildcard2(t *testing.T) {
 	    }]
 	}`
 
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/api/query", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/api/query", []byte(payload))
 
-	payloadError := GrafanaPointsErrorMem{}
+	payloadError := tools.Error{}
 
 	err = json.Unmarshal(response, &payloadError)
 
@@ -8093,9 +8036,9 @@ func TestTsdbQueryMemInvalidFilterLiteralOr1(t *testing.T) {
 	    }]
 	}`
 
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/api/query", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/api/query", []byte(payload))
 
-	payloadError := GrafanaPointsErrorMem{}
+	payloadError := tools.Error{}
 
 	err = json.Unmarshal(response, &payloadError)
 
@@ -8127,9 +8070,9 @@ func TestTsdbQueryMemInvalidFilterNotLiteralOr1(t *testing.T) {
 	    }]
 	}`
 
-	code, response, err := mycenaeTools.HTTP.POST("keyspaces/" + ksMycenae + "/api/query", []byte(payload))
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/api/query", []byte(payload))
 
-	payloadError := GrafanaPointsErrorMem{}
+	payloadError := tools.Error{}
 
 	err = json.Unmarshal(response, &payloadError)
 
