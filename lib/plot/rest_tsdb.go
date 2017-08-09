@@ -254,10 +254,10 @@ func (plot *Plot) getTimeseries(
 				val, _ = strconv.Atoi(ds[0][:len(ds[0])-1])
 			}
 
-			apporx := ds[1]
+			approx := ds[1]
 
-			if apporx == "count" {
-				apporx = "pnt"
+			if approx == "count" {
+				approx = "pnt"
 			}
 
 			switch unit {
@@ -285,7 +285,7 @@ func (plot *Plot) getTimeseries(
 				oldDs.Options.Fill = "none"
 			}
 
-			oldDs.Options.Downsample = apporx
+			oldDs.Options.Downsample = approx
 			oldDs.Options.Value = val
 			oldDs.Enabled = true
 
