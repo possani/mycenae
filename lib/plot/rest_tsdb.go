@@ -2,6 +2,7 @@ package plot
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"sort"
 	"strconv"
@@ -343,6 +344,8 @@ func (plot *Plot) getTimeseries(
 			gblog.Sugar().Warnf("TS THRESHOLD EXEECED: %+v", query)
 		}
 
+		log.Println("foo tsobs ", tsobs)
+
 		if total > plot.MaxTimeseries {
 			statsQueryLimit(keyspace)
 			return TSDBresponses{}, errValidationS(
@@ -359,7 +362,22 @@ func (plot *Plot) getTimeseries(
 			continue
 		}
 
-		groups := plot.GetGroups(q.Filters, tsobs)
+		var groups [][]TSDBobj
+
+		if q.ExplicitTags {
+			newTsobs := []TSDBobj{}
+			fl := len(q.Filters)
+			for _, ob := range tsobs {
+				if len(ob.Tags) == fl {
+					newTsobs = append(newTsobs, ob)
+				}
+			}
+			groups = plot.GetGroups(q.Filters, newTsobs)
+			log.Println("foo groups ", groups)
+		} else {
+			groups = plot.GetGroups(q.Filters, tsobs)
+			log.Println("foo groups ", groups)
+		}
 
 		for i := range q.Filters {
 			q.Filters[i].GroupByResp = q.Filters[i].GroupBy
