@@ -7527,7 +7527,7 @@ func TestTsdbQueryShowQuery(t *testing.T) {
 	dateStart := 1448452800
 	for i, key := range keys {
 
-		assert.Exactly(t, float32(i+i), payloadPoints[0].Dps[key])
+		assert.Exactly(t, float64(i+i), payloadPoints[0].Dps[key])
 		assert.Exactly(t, strconv.Itoa(dateStart), key)
 		dateStart += 60
 	}
@@ -7562,7 +7562,7 @@ func TestTsdbQueryShowQueryWithDownsample(t *testing.T) {
 	assert.Equal(t, (*structs.TSDBrateOptions)(nil), payloadPoints[0].Query.RateOptions)
 	assert.Equal(t, false, payloadPoints[0].Query.ExplicitTags)
 
-	assert.Exactly(t, float32(20), payloadPoints[0].Dps[keys[0]])
+	assert.Exactly(t, float64(20), payloadPoints[0].Dps[keys[0]])
 	assert.Exactly(t, strconv.Itoa(1448452800), keys[0])
 
 }
@@ -7607,7 +7607,7 @@ func TestTsdbQueryShowQueryWithFilter(t *testing.T) {
 		dateStart := 1448452800
 		for j, key := range keys {
 
-			assert.Exactly(t, float32(j), payloadPoints[i].Dps[key])
+			assert.Exactly(t, float64(j), payloadPoints[i].Dps[key])
 			assert.Exactly(t, strconv.Itoa(dateStart), key)
 			dateStart += 60
 		}
@@ -7659,7 +7659,7 @@ func TestTsdbQueryShowQueryWithFilterAndTwoQueries(t *testing.T) {
 			dateStart := 1448452800
 			for j, key := range keys {
 
-				assert.Exactly(t, float32(j+j), payloadPoints[i].Dps[key])
+				assert.Exactly(t, float64(j+j), payloadPoints[i].Dps[key])
 				assert.Exactly(t, strconv.Itoa(dateStart), key)
 				dateStart += 60
 			}
@@ -7682,7 +7682,7 @@ func TestTsdbQueryShowQueryWithFilterAndTwoQueries(t *testing.T) {
 			dateStart := 1448452800
 			for j, key := range keys {
 
-				assert.Exactly(t, float32(j), payloadPoints[i].Dps[key])
+				assert.Exactly(t, float64(j), payloadPoints[i].Dps[key])
 				assert.Exactly(t, strconv.Itoa(dateStart), key)
 				dateStart += 60
 			}
@@ -7729,7 +7729,7 @@ func TestTsdbQueryShowQueryWithExplicitTags(t *testing.T) {
 	dateStart := 1448452800
 	for i, key := range keys {
 
-		assert.Exactly(t, float32(i), payloadPoints[0].Dps[key])
+		assert.Exactly(t, float64(i), payloadPoints[0].Dps[key])
 		assert.Exactly(t, strconv.Itoa(dateStart), key)
 		dateStart += 60
 	}
