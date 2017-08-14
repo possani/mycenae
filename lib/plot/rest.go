@@ -105,7 +105,6 @@ func (plot *Plot) ListPoints(w http.ResponseWriter, r *http.Request, ps httprout
 			"",
 			true,
 			query.GetRe(),
-			query.Downsample,
 		)
 
 		if gerr != nil {
@@ -169,7 +168,6 @@ func (plot *Plot) ListPoints(w http.ResponseWriter, r *http.Request, ps httprout
 					ks.Option,
 					true,
 					query.GetRe(),
-					query.Downsample,
 				)
 				if gerr != nil {
 					rip.Fail(w, gerr)

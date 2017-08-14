@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/uol/gobol"
-	"github.com/uol/mycenae/lib/structs"
 )
 
 func (plot *Plot) GetTextSeries(
@@ -18,7 +17,6 @@ func (plot *Plot) GetTextSeries(
 	mergeType string,
 	keepEmpties bool,
 	search *regexp.Regexp,
-	downsample structs.Downsample,
 ) (serie TST, gerr gobol.Error) {
 
 	w := start
@@ -42,7 +40,7 @@ func (plot *Plot) GetTextSeries(
 
 	for _, key := range keys {
 		plot.concTimeseries <- struct{}{}
-		go plot.getTextSerie(keyspace, key, buckets, start, end, keepEmpties, search, downsample, tsChan)
+		go plot.getTextSerie(keyspace, key, buckets, start, end, keepEmpties, search, tsChan)
 	}
 
 	j := 0
@@ -82,7 +80,6 @@ func (plot *Plot) getTextSerie(
 	end int64,
 	keepEmpties bool,
 	search *regexp.Regexp,
-	downsample structs.Downsample,
 	tsChan chan TST,
 ) {
 
@@ -94,7 +91,7 @@ func (plot *Plot) getTextSerie(
 	for i, bucket := range buckets {
 		buckID := fmt.Sprintf("%v%v", bucket, key)
 		plot.concReads <- struct{}{}
-		go plot.getTextSerieBucket(i, keyspace, buckID, start, end, search, downsample, bucketChan)
+		go plot.getTextSerieBucket(i, keyspace, buckID, start, end, search, bucketChan)
 	}
 
 	bucketList := make([]TST, chanSize)
@@ -128,7 +125,6 @@ func (plot *Plot) getTextSerieBucket(
 	start,
 	end int64,
 	search *regexp.Regexp,
-	downsample structs.Downsample,
 	tsChan chan TST,
 ) {
 	resultSet, count, gerr := plot.persist.cass.GetText(keyspace, key, start, end, search)

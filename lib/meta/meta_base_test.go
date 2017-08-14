@@ -94,7 +94,7 @@ func genericBackendTesting(t *testing.T, backend Backend) {
 
 		Metric: "testing.metric",
 		Tags: []*pb.Tag{
-			&pb.Tag{Key: "host", Value: "nohost"},
+			{Key: "host", Value: "nohost"},
 		},
 	})
 	time.Sleep(time.Second * 5)

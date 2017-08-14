@@ -11,6 +11,7 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/gocql/gocql"
 	"github.com/uol/gobol/loader"
@@ -130,7 +131,30 @@ func main() {
 	if err != nil {
 		tsLogger.Fatal("", zap.Error(err))
 	}
+	go func() {
 
+		tsLogger := tsLogger.With(
+			zap.String("func", "main"),
+			zap.String("package", "main"),
+		)
+
+		for pts := range wal.Load() {
+			for _, p := range pts {
+				err := cluster.WAL(&p)
+				if err != nil {
+					tsLogger.Error(
+						"failure loading point from write-ahead-log (wal)",
+						zap.Error(err),
+					)
+				}
+			}
+		}
+
+		tsLogger.Debug("finished loading points")
+
+	}()
+
+	time.Sleep(30 * time.Second)
 	limiter, err := limiter.New(settings.MaxRateLimit, settings.Burst, tsLogger)
 	if err != nil {
 		tsLogger.Fatal(err.Error())
@@ -189,30 +213,10 @@ func main() {
 	tsRest.Start()
 
 	tsLogger.Info("Mycenae started successfully")
-	go func() {
-		logger := tsLogger.With(
-			zap.String("func", "main"),
-			zap.String("package", "main"),
-		)
-		for pts := range wal.Load() {
-			if len(pts) > 0 {
-				logger.Debug(
-					"loading points from commitlog",
-					zap.Int("count", len(pts)),
-				)
-			}
-			for _, p := range pts {
-				err := cluster.WAL(&p)
-				if err != nil {
-					logger.Error(
-						"failure loading point from write-ahead-log (wal)",
-						zap.Error(err),
-					)
-				}
-			}
-		}
-		logger.Debug("finished loading points")
-	}()
+
+	/*
+
+	 */
 
 	signalChannel := make(chan os.Signal, 1)
 	signal.Notify(signalChannel, os.Interrupt, syscall.SIGTERM, syscall.SIGHUP)
