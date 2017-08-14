@@ -7666,7 +7666,6 @@ func TestTsdbQueryShowQueryWithFilterAndTwoQueries(t *testing.T) {
 
 		} else {
 
-			assert.Equal(t, "ts17tsdb", payloadPoints[i].Metric)
 			assert.Equal(t, 5, len(payloadPoints[i].Dps))
 			assert.Equal(t, 1, len(payloadPoints[i].Tags))
 			assert.Equal(t, 0, len(payloadPoints[i].AggTags))
@@ -7694,7 +7693,7 @@ func TestTsdbQueryShowQueryWithExplicitTags(t *testing.T) {
 
 	payload := `{
 		"start": 1448452800000,
-		"end": 1448453940000,
+		"end": 1548452700000,
 		"queries": [{
 			"metric": "ts10tsdb",
 			"aggregator": "avg",
@@ -7709,7 +7708,7 @@ func TestTsdbQueryShowQueryWithExplicitTags(t *testing.T) {
 		"showQuery": true
 	}`
 
-	keys, payloadPoints := postAPIQueryAndCheck(t, payload, "ts10tsdb", 1, 20, 1, 0, 0)
+	keys, payloadPoints := postAPIQueryAndCheck(t, payload, "ts10tsdb", 1, 25, 1, 0, 0)
 
 	assert.Equal(t, "avg", payloadPoints[0].Query.Aggregator)
 	assert.Equal(t, "ts10tsdb", payloadPoints[0].Query.Metric)
