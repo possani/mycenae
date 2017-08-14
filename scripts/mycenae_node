@@ -62,7 +62,7 @@ sleep "10s"
 
 name2="mycenae${1}"
 
-#docker rm -f ${name2}
+docker rm -f ${name2}
 
 tmpdir=/tmp/${name2}
 #sudo rm -rf ${tmpdir}
