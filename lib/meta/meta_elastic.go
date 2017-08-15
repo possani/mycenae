@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 	"regexp"
 	"strings"
 	"sync"
@@ -25,6 +26,7 @@ type elasticMeta struct {
 	validKey *regexp.Regexp
 	settings *Settings
 	persist  persistence
+	esearch  *rubber.Elastic
 	stats    *tsstats.StatsTS
 	logger   *zap.Logger
 
@@ -436,20 +438,36 @@ func (meta *elasticMeta) generateBulk(packet *pb.Meta, number bool) gobol.Error 
 	return nil
 }
 
-func (meta *elasticMeta) saveBulk(boby io.Reader) {
-	gerr := meta.persist.SaveBulkES(boby)
-	if gerr != nil {
+func (meta *elasticMeta) saveBulk(body io.Reader) {
+	defer func() { <-meta.concBulk }()
+	start := time.Now()
+	status, err := meta.esearch.PostBulk(body)
+	if err != nil {
+		statsIndexError(meta.stats, "", "", "bulk")
 		meta.logger.Error(
-			gerr.Error(),
-			zap.String("func", "metaCoordinator/SaveBulkES"),
+			"Elastic search problem",
+			zap.String("function", "saveBulk"),
+			zap.String("structure", "elasticMeta"),
+			zap.String("package", "meta"),
+			zap.Int("status", status),
+			zap.Error(err),
 		)
 	}
-	<-meta.concBulk
+	statsIndex(meta.stats, "", "", "bulk", time.Since(start))
 }
 
 func (meta *elasticMeta) CheckTSID(esType, id string) (bool, gobol.Error) {
 	info := strings.Split(id, "|")
-	return meta.persist.HeadMetaFromES(info[0], esType, info[1])
+	esindex, id := info[0], info[1]
+
+	start := time.Now()
+	respCode, err := meta.esearch.GetHead(esindex, esType, id)
+	if err != nil {
+		statsIndexError(meta.stats, esindex, esType, "head")
+		return false, errPersist("HeadMetaFromES", err)
+	}
+	statsIndex(meta.stats, esindex, esType, "head", time.Since(start))
+	return respCode == http.StatusOK, nil
 }
 
 func (meta *elasticMeta) CreateIndex(index string) gobol.Error {
