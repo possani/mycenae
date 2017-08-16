@@ -88,6 +88,8 @@ func (m *localMeta) CheckTSID(esType, id string) (bool, gobol.Error) {
 	return exists, nil
 }
 
+func (m *localMeta) SendError(index, dtype, id string, doc ErrorData) gobol.Error { return nil }
+
 func (m *localMeta) CreateIndex(name string) gobol.Error {
 	m.index.Add(name, "meta", index.Create())
 	return nil

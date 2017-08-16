@@ -4,18 +4,18 @@ import (
 	"time"
 
 	"github.com/uol/gobol"
-	"github.com/uol/gobol/rubber"
 	"github.com/uol/mycenae/lib/cluster"
 	"github.com/uol/mycenae/lib/depot"
 	"github.com/uol/mycenae/lib/gorilla"
+	"github.com/uol/mycenae/lib/meta"
 
 	pb "github.com/uol/mycenae/lib/proto"
 )
 
 type persistence struct {
 	cluster *cluster.Cluster
-	esearch *rubber.Elastic
 	cass    *depot.Cassandra
+	meta    *meta.Meta
 }
 
 func (persist *persistence) InsertPoint(packet *gorilla.Point) gobol.Error {
@@ -36,13 +36,6 @@ func (persist *persistence) InsertError(id, msg, errMsg string, date time.Time) 
 	return persist.cass.InsertError(id, msg, errMsg, date)
 }
 
-func (persist *persistence) SendErrorToES(index, eType, id string, doc StructV2Error) gobol.Error {
-	start := time.Now()
-	_, err := persist.esearch.Put(index, eType, id, doc)
-	if err != nil {
-		statsIndexError(index, eType, "put")
-		return errPersist("SendErrorToES", err)
-	}
-	statsIndex(index, eType, "PUT", time.Since(start))
-	return nil
+func (persist *persistence) SendErrorToES(index, eType, id string, doc meta.ErrorData) gobol.Error {
+	return persist.meta.SendError(index, eType, id, doc)
 }

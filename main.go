@@ -132,8 +132,7 @@ func main() {
 		tsLogger.Fatal("", zap.Error(err))
 	}
 	go func() {
-
-		tsLogger := tsLogger.With(
+		logger := tsLogger.With(
 			zap.String("func", "main"),
 			zap.String("package", "main"),
 		)
@@ -142,16 +141,14 @@ func main() {
 			for _, p := range pts {
 				err := cluster.WAL(&p)
 				if err != nil {
-					tsLogger.Error(
+					logger.Error(
 						"failure loading point from write-ahead-log (wal)",
 						zap.Error(err),
 					)
 				}
 			}
 		}
-
-		tsLogger.Debug("finished loading points")
-
+		logger.Debug("finished loading points")
 	}()
 
 	time.Sleep(30 * time.Second)
@@ -160,7 +157,7 @@ func main() {
 		tsLogger.Fatal(err.Error())
 	}
 
-	coll, err := collector.New(tsLogger, tssts, cluster, meta, d, es, bc, ks, &settings, limiter)
+	coll, err := collector.New(tsLogger, tssts, cluster, meta, d, bc, ks, &settings, limiter)
 	if err != nil {
 		tsLogger.Fatal(err.Error())
 	}

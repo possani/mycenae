@@ -31,12 +31,6 @@ type StructV2Error struct {
 	Tags   []Tag  `json:"tagsError"`
 }
 
-// Tag ...
-type Tag struct {
-	Key   string `json:"tagKey"`
-	Value string `json:"tagValue"`
-}
-
 // Info ...
 type Info struct {
 	Metric string `json:"metric"`

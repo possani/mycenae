@@ -470,6 +470,17 @@ func (meta *elasticMeta) CheckTSID(esType, id string) (bool, gobol.Error) {
 	return respCode == http.StatusOK, nil
 }
 
+func (meta *elasticMeta) SendError(index, dtype, id string, doc ErrorData) gobol.Error {
+	start := time.Now()
+	_, err := meta.esearch.Put(index, dtype, id, doc)
+	if err != nil {
+		statsIndexError(meta.stats, index, dtype, "put")
+		return errPersist("SendErrorToES", err)
+	}
+	statsIndex(meta.stats, index, dtype, "PUT", time.Since(start))
+	return nil
+}
+
 func (meta *elasticMeta) CreateIndex(index string) gobol.Error {
 	start := time.Now()
 	body := bytes.NewBuffer(nil)

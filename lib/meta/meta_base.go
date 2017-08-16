@@ -9,11 +9,25 @@ import (
 	"go.uber.org/zap"
 )
 
+// Tag represents a tag key-value pair
+type Tag struct {
+	Key   string `json:"tagKey"`
+	Value string `json:"tagValue"`
+}
+
+// ErrorData represents an error
+type ErrorData struct {
+	Key    string `json:"key"`
+	Metric string `json:"metric"`
+	Tags   []Tag  `json:"tagsError"`
+}
+
 // Backend defines the behaviour of Meta
 type Backend interface {
 	Handle(pkt *pb.Meta) bool
 	SaveTxtMeta(packet *pb.Meta)
-	CheckTSID(esType, id string) (bool, gobol.Error)
+	CheckTSID(dtype, id string) (bool, gobol.Error)
+	SendError(index, dtype, id string, doc ErrorData) gobol.Error
 
 	CreateIndex(index string) gobol.Error
 	DeleteIndex(index string) gobol.Error

@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/uol/gobol"
-	"github.com/uol/gobol/rubber"
 
 	"github.com/uol/mycenae/lib/bcache"
 	"github.com/uol/mycenae/lib/cluster"
@@ -41,7 +40,6 @@ func New(
 	cluster *cluster.Cluster,
 	meta *meta.Meta,
 	cass *depot.Cassandra,
-	es *rubber.Elastic,
 	bc *bcache.Bcache,
 	kspace *keyspace.Keyspace,
 	set *structs.Settings,
@@ -58,8 +56,8 @@ func New(
 		meta:    meta,
 		persist: persistence{
 			cluster: cluster,
-			esearch: es,
 			cass:    cass,
+			meta:    meta,
 		},
 		validKey:   regexp.MustCompile(`^[0-9A-Za-z-._%&#;/]+$`),
 		validKSID:  regexp.MustCompile(`^[0-9a-z_]+$`),
