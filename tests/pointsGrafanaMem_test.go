@@ -7868,6 +7868,358 @@ func TestTsdbQueryMemShowQueryOneExplicitTagAndTwoQueries(t *testing.T) {
 	}
 }
 
+func TestTsdbQueryMemShowQueryRateTrueRateOptionsFalse(t *testing.T) {
+
+	payload := fmt.Sprintf(`{
+		"start": %v,
+		"showTSUIDs": true,
+		"queries": [{
+			"metric": "ts01tsdbmem",
+			"rate": true,
+			"aggregator": "sum",
+			"tags": {
+				"host": "test"
+			}
+		}],
+		"showQuery": true
+	}`, hashMapStartTime["ts1TsdbQueryMem"])
+
+	keys, payloadPoints := postAPIQueryAndCheckMem(t, payload, "ts01tsdbmem", 1, 99, 1, 0, 1, "ts1TsdbQueryMem")
+	assert.Equal(t, "test", payloadPoints[0].Tags["host"])
+
+	index := 0
+	expected := structs.TSDBquery{
+		Aggregator: "sum",
+		Metric:     "ts01tsdbmem",
+		Filters: []structs.TSDBfilter{{
+			Tagk:        "host",
+			Filter:      "test",
+			GroupByResp: false,
+			Ftype:       "wildcard",
+		}},
+		Tags:        map[string]string{"host": "test"},
+		Index:       &index,
+		Rate:        true,
+		RateOptions: &structs.TSDBrateOptions{},
+	}
+	testSubQuery(t, expected, *payloadPoints[0].Query)
+
+	var i float32
+	dateStart := hashMapStartTime["ts1TsdbQueryMem"]
+	for _, key := range keys {
+
+		calc := (((i + 1.0) - i) / (float32((dateStart + 60) - dateStart)))
+		assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
+
+		dateStart += 60
+		assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
+		i++
+	}
+
+}
+
+func TestTsdbQueryMemShowQueryRateTrueRateOptionsTrueCounter(t *testing.T) {
+
+	payload := `{
+		"start": ` + strconv.FormatInt(ts12TsdbQueryMemStartTime, 10) + `,
+		"end": ` + strconv.FormatInt((ts12TsdbQueryMemStartTime+240), 10) + `,
+		"showTSUIDs": true,
+		"queries": [{
+			"metric": "ts12-_/.%&#;tsdb",
+			"rate": true,
+			"rateOptions": {
+				  "counter": true
+			},
+			"aggregator": "sum",
+			"tags": {
+				"hos-_/.%&#;t": "test-_/.%&#;1"
+			}
+		}],
+		"showQuery": true
+	}`
+	keys, payloadPoints := postAPIQueryAndCheckMem(t, payload, "ts12-_/.%&#;tsdb", 1, 4, 1, 0, 1, ts12IDTsdbQueryMem)
+	assert.Equal(t, "test-_/.%&#;1", payloadPoints[0].Tags["hos-_/.%&#;t"])
+	assert.Equal(t, ts12IDTsdbQuery, payloadPoints[0].Tsuuids[0])
+
+	index := 0
+	expected := structs.TSDBquery{
+		Aggregator: "sum",
+		Metric:     "ts12-_/.%&#;tsdb",
+		Filters: []structs.TSDBfilter{{
+			Tagk:        "hos-_/.%&#;t",
+			Filter:      "test-_/.%&#;1",
+			GroupByResp: false,
+			Ftype:       "wildcard",
+		}},
+		Tags:        map[string]string{"hos-_/.%&#;t": "test-_/.%&#;1"},
+		Index:       &index,
+		Rate:        true,
+		RateOptions: &structs.TSDBrateOptions{Counter: true},
+	}
+	testSubQuery(t, expected, *payloadPoints[0].Query)
+
+	var i float32 = 1.0
+	dateStart := ts12TsdbQueryMemStartTime
+	for _, key := range keys {
+
+		calc := (((i * 10.0) - i) / (float32((dateStart + 60) - dateStart)))
+		assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
+
+		dateStart = dateStart + 60
+		assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
+
+		i = i * 10.0
+	}
+}
+
+func TestTsdbQueryMemShowQueryRateTrueRateOptionsTrueCounterMax(t *testing.T) {
+
+	payload := `{
+		"start": ` + strconv.FormatInt(ts12TsdbQueryMemStartTime, 10) + `,
+		"end": ` + strconv.FormatInt(ts12TsdbQueryMemStartTime+300, 10) + `,
+		"showTSUIDs": true,
+		"queries": [{
+			"metric": "ts12-_/.%&#;tsdb",
+			"rate": true,
+			"rateOptions": {
+				  "counter": true,
+				  "counterMax": 15000
+			  },
+			"aggregator": "sum",
+			"tags": {
+				"hos-_/.%&#;t": "test-_/.%&#;1"
+			}
+		}],
+		"showQuery": true
+	}`
+	keys, payloadPoints := postAPIQueryAndCheckMem(t, payload, "ts12-_/.%&#;tsdb", 1, 5, 1, 0, 1, ts12IDTsdbQueryMem)
+	assert.Equal(t, "test-_/.%&#;1", payloadPoints[0].Tags["hos-_/.%&#;t"])
+	assert.Equal(t, ts12IDTsdbQuery, payloadPoints[0].Tsuuids[0])
+
+	index := 0
+	expected := structs.TSDBquery{
+		Aggregator: "sum",
+		Metric:     "ts12-_/.%&#;tsdb",
+		Filters: []structs.TSDBfilter{{
+			Tagk:        "hos-_/.%&#;t",
+			Filter:      "test-_/.%&#;1",
+			GroupByResp: false,
+			Ftype:       "wildcard",
+		}},
+		Tags:        map[string]string{"hos-_/.%&#;t": "test-_/.%&#;1"},
+		Index:       &index,
+		Rate:        true,
+		RateOptions: &structs.TSDBrateOptions{Counter: true},
+	}
+	testSubQuery(t, expected, *payloadPoints[0].Query)
+
+	var i float32 = 1.0
+	dateStart := ts12TsdbQueryMemStartTime
+	var countermax float32 = 15000.0
+
+	for _, key := range keys {
+
+		if dateStart < (ts12TsdbQueryMemStartTime + 240) {
+
+			calc := (((i * 10.0) - i) / (float32((dateStart + 60) - dateStart)))
+			assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
+
+			dateStart += 60
+			assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
+
+			i = i * 10.0
+		} else {
+			calc := ((countermax - i + 1000) / (float32((dateStart + 60) - dateStart)))
+			assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
+
+			dateStart += 60
+			assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
+		}
+	}
+}
+
+func TestTsdbQueryMemShowQueryRateTrueRateOptionsTrueResetValue(t *testing.T) {
+
+	payload := `{
+		"start": ` + strconv.FormatInt(ts12TsdbQueryMemStartTime, 10) + `,
+		"end": ` + strconv.FormatInt(ts12TsdbQueryMemStartTime+300, 10) + `,
+		"showTSUIDs": true,
+		"queries": [{
+			"metric": "ts12-_/.%&#;tsdb",
+			"rate": true,
+			"rateOptions": {
+				"counter": true,
+				"resetValue": 10
+			},
+			"aggregator": "sum",
+			"tags": {
+				"hos-_/.%&#;t": "test-_/.%&#;1"
+			}
+		}],
+		"showQuery": true
+	}`
+	keys, payloadPoints := postAPIQueryAndCheckMem(t, payload, "ts12-_/.%&#;tsdb", 1, 5, 1, 0, 1, ts12IDTsdbQueryMem)
+	assert.Equal(t, "test-_/.%&#;1", payloadPoints[0].Tags["hos-_/.%&#;t"])
+	assert.Equal(t, ts12IDTsdbQuery, payloadPoints[0].Tsuuids[0])
+
+	index := 0
+	expected := structs.TSDBquery{
+		Aggregator: "sum",
+		Metric:     "ts12-_/.%&#;tsdb",
+		Filters: []structs.TSDBfilter{{
+			Tagk:        "hos-_/.%&#;t",
+			Filter:      "test-_/.%&#;1",
+			GroupByResp: false,
+			Ftype:       "wildcard",
+		}},
+		Tags:        map[string]string{"hos-_/.%&#;t": "test-_/.%&#;1"},
+		Index:       &index,
+		Rate:        true,
+		RateOptions: &structs.TSDBrateOptions{Counter: true, ResetValue: 10},
+	}
+	testSubQuery(t, expected, *payloadPoints[0].Query)
+
+	var i float32 = 1.0
+	dateStart := ts12TsdbQueryMemStartTime
+	for _, key := range keys {
+
+		if dateStart < (ts12TsdbQueryMemStartTime + 240) {
+
+			calc := (((i * 10.0) - i) / (float32((dateStart + 60) - dateStart)))
+			assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
+
+			dateStart = dateStart + 60
+			assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
+
+			i = i * 10.0
+		} else {
+			var calc float32
+			assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
+
+			dateStart = dateStart + 60
+			assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
+		}
+	}
+}
+
+func TestTsdbQueryMemShowQueryRateTrueRateOptionsTrueCounterMaxAndResetValue(t *testing.T) {
+
+	payload := `{
+		"start": ` + strconv.FormatInt(ts12TsdbQueryMemStartTime, 10) + `,
+		"end": ` + strconv.FormatInt(ts12TsdbQueryMemStartTime+720, 10) + `,
+		"showTSUIDs": true,
+		"queries": [{
+			"metric": "ts12-_/.%&#;tsdb",
+			"rate": true,
+			"rateOptions": {
+				"counter": true,
+				"counterMax": 15000,
+				"resetValue": 233
+			},
+			"aggregator": "sum",
+			"tags": {
+				"hos-_/.%&#;t": "test-_/.%&#;1"
+			}
+		}],
+		"showQuery": true		
+		}]
+	}`
+	keys, payloadPoints := postAPIQueryAndCheckMem(t, payload, "ts12-_/.%&#;tsdb", 1, 11, 1, 0, 1, ts12IDTsdbQueryMem)
+	assert.Equal(t, "test-_/.%&#;1", payloadPoints[0].Tags["hos-_/.%&#;t"])
+	assert.Equal(t, ts12IDTsdbQuery, payloadPoints[0].Tsuuids[0])
+
+	index, cM := 0, int64(15000)
+	expected := structs.TSDBquery{
+		Aggregator: "sum",
+		Metric:     "ts12-_/.%&#;tsdb",
+		Filters: []structs.TSDBfilter{{
+			Tagk:        "hos-_/.%&#;t",
+			Filter:      "test-_/.%&#;1",
+			GroupByResp: false,
+			Ftype:       "wildcard",
+		}},
+		Tags:        map[string]string{"hos-_/.%&#;t": "test-_/.%&#;1"},
+		Index:       &index,
+		Rate:        true,
+		RateOptions: &structs.TSDBrateOptions{true, &cM, 233},
+	}
+	testSubQuery(t, expected, *payloadPoints[0].Query)
+
+	var i float32 = 1.0
+	dateStart := ts12TsdbQueryMemStartTime
+	var countermax float32 = 15000.0
+	for _, key := range keys {
+
+		if dateStart < (ts12TsdbQueryMemStartTime + 240) {
+
+			calc := (((i * 10.0) - i) / (float32((dateStart + 60) - dateStart)))
+			assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
+
+			dateStart = dateStart + 60
+			assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
+
+			i = i * 10.0
+		} else if dateStart < (ts12TsdbQueryMemStartTime + 300) {
+			calc := ((countermax - i + 1000) / (float32((dateStart + 60) - dateStart)))
+			assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
+
+			dateStart = dateStart + 60
+			assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
+
+		} else if dateStart < (ts12TsdbQueryMemStartTime + 360) {
+			var calc float32
+			assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
+
+			dateStart = dateStart + 60
+			assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
+			i = 1.0
+
+		} else if dateStart < (ts12TsdbQueryMemStartTime + 600) {
+			calc := (((i * 10.0) - i) / (float32((dateStart + 60) - dateStart)))
+			assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
+
+			dateStart = dateStart + 60
+			assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
+
+			i = i * 10.0
+		} else {
+			calc := ((countermax - i + 3000.0) / (float32((dateStart + 60) - dateStart)))
+			assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
+
+			dateStart = dateStart + 60
+			assert.Exactly(t, strconv.FormatInt(dateStart, 10), key)
+		}
+	}
+}
+
+func TestTsdbQueryMemShowQueryRateTrueNoPoints(t *testing.T) {
+
+	payload := fmt.Sprintf(`{
+		"start": %v,
+		"end": %v,
+		"showTSUIDs": true,
+		"queries": [{
+    		"metric": "ts01tsdbmem",
+    		"rate": true,
+    		"aggregator": "sum",
+    		"tags": {
+      			"host": "test"
+			}
+		}],
+		"showQuery": true
+	}`, hashMapStartTime["ts1TsdbQueryMem"]-2, hashMapStartTime["ts1TsdbQueryMem"]-1)
+
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/api/query", []byte(payload))
+	if err != nil {
+		t.Error(err)
+		t.SkipNow()
+	}
+
+	assert.Equal(t, 200, code)
+	assert.Exactly(t, "[]", string(response))
+
+}
+
 func TestTsdbQueryMemTagsInvalidTagKey(t *testing.T) {
 
 	payload := `{

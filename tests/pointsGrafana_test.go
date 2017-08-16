@@ -84,7 +84,6 @@ func testSubQuery(t *testing.T, expected, actual structs.TSDBquery) {
 	assert.Equal(t, expected.TSUIDs, actual.TSUIDs)
 	assert.Equal(t, expected.Downsample, actual.Downsample)
 	assert.Equal(t, expected.Rate, actual.Rate)
-	assert.Equal(t, expected.Filters, actual.Filters)
 
 	if expected.Rate {
 		assert.Equal(t, expected.RateOptions.Counter, actual.RateOptions.Counter)
@@ -95,8 +94,12 @@ func testSubQuery(t *testing.T, expected, actual structs.TSDBquery) {
 		}
 	}
 
+	assert.Equal(t, len(expected.Filters), len(actual.Filters))
 	for i, f := range expected.Filters {
-		assert.Equal(t, f, actual.Filters[i])
+		assert.Equal(t, f.Filter, actual.Filters[i].Filter)
+		assert.Equal(t, f.Ftype, actual.Filters[i].Ftype)
+		assert.Equal(t, f.GroupByResp, actual.Filters[i].GroupByResp)
+		assert.Equal(t, f.Tagk, actual.Filters[i].Tagk)
 	}
 
 	if expected.Index != nil && assert.NotNil(t, actual.Index) {
@@ -105,7 +108,6 @@ func testSubQuery(t *testing.T, expected, actual structs.TSDBquery) {
 
 	assert.Equal(t, expected.Tags, actual.Tags)
 	assert.Equal(t, expected.FilterTagKs, actual.FilterTagKs)
-	assert.Equal(t, expected.RateOptions, actual.RateOptions)
 	assert.Equal(t, expected.ExplicitTags, actual.ExplicitTags)
 
 }
@@ -8067,6 +8069,366 @@ func TestTsdbQueryShowQueryOneExplicitTagAndTwoQueries(t *testing.T) {
 		assert.Exactly(t, strconv.Itoa(dateStart), key)
 		dateStart += 60
 	}
+}
+
+func TestTsdbQueryShowQueryRateTrueRateOptionsFalse(t *testing.T) {
+
+	payload := `{
+		"start": 1448452800000,
+		"end": 1448512200000,
+		"showTSUIDs": true,
+		"queries": [{
+			"metric": "ts01tsdb",
+			"rate": true,
+			"aggregator": "sum",
+			"tags": {
+				"host": "test"
+			}
+		}],
+		"showQuery": true
+	}`
+
+	keys, payloadPoints := postAPIQueryAndCheck(t, payload, "ts01tsdb", 1, 99, 1, 0, 1, "ts1TsdbQuery")
+
+	assert.Equal(t, "test", payloadPoints[0].Tags["host"])
+
+	index := 0
+	expected := structs.TSDBquery{
+		Aggregator: "sum",
+		Metric:     "ts01tsdb",
+		Filters: []structs.TSDBfilter{{
+			Tagk:        "host",
+			Filter:      "test",
+			GroupByResp: false,
+			Ftype:       "wildcard",
+		}},
+		Tags:        map[string]string{"host": "test"},
+		Index:       &index,
+		Rate:        true,
+		RateOptions: &structs.TSDBrateOptions{},
+	}
+	testSubQuery(t, expected, *payloadPoints[0].Query)
+
+	var i float32
+	dateStart := 1448452800
+	for _, key := range keys {
+
+		calc := ((i + 1.0) - i) / float32((dateStart+60)-dateStart)
+		assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
+
+		dateStart += 60
+		assert.Exactly(t, strconv.Itoa(dateStart), key)
+
+		i++
+	}
+}
+
+func TestTsdbQueryShowQueryRateTrueRateOptionsTrueCounter(t *testing.T) {
+
+	payload := `{
+		"start": 1448452740000,
+		"end": 1448453040000,
+		"showTSUIDs": true,
+		"queries": [{
+			"metric": "ts12-_/.%&#;tsdb",
+			"rate": true,
+			"rateOptions": {
+				"counter": true
+			},
+			"aggregator": "sum",
+			"tags": {
+				"hos-_/.%&#;t": "test-_/.%&#;1"
+			}
+		}],
+		"showQuery": true
+	}`
+
+	keys, payloadPoints := postAPIQueryAndCheck(t, payload, "ts12-_/.%&#;tsdb", 1, 4, 1, 0, 1)
+
+	assert.Equal(t, "test-_/.%&#;1", payloadPoints[0].Tags["hos-_/.%&#;t"])
+	assert.Equal(t, ts12IDTsdbQuery, payloadPoints[0].Tsuuids[0])
+
+	index := 0
+	expected := structs.TSDBquery{
+		Aggregator: "sum",
+		Metric:     "ts12-_/.%&#;tsdb",
+		Filters: []structs.TSDBfilter{{
+			Tagk:        "hos-_/.%&#;t",
+			Filter:      "test-_/.%&#;1",
+			GroupByResp: false,
+			Ftype:       "wildcard",
+		}},
+		Tags:        map[string]string{"hos-_/.%&#;t": "test-_/.%&#;1"},
+		Index:       &index,
+		Rate:        true,
+		RateOptions: &structs.TSDBrateOptions{Counter: true},
+	}
+	testSubQuery(t, expected, *payloadPoints[0].Query)
+
+	var i float32 = 1.0
+	dateStart := 1448452800
+	for _, key := range keys {
+
+		calc := ((i * 10.0) - i) / (float32(dateStart + 60 - dateStart))
+		assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
+
+		dateStart += 60
+		assert.Exactly(t, strconv.Itoa(dateStart), key)
+
+		i = i * 10.0
+	}
+}
+
+func TestTsdbQueryShowQueryRateTrueRateOptionsTrueCounterMax(t *testing.T) {
+
+	payload := `{
+		"start": 1448452740000,
+		"end": 1448453100000,
+		"showTSUIDs": true,
+		"queries": [{
+			"metric": "ts12-_/.%&#;tsdb",
+			"rate": true,
+			"rateOptions": {
+				"counter": true,
+				"counterMax": 15000
+			},
+			"aggregator": "sum",
+			"tags": {
+				"hos-_/.%&#;t": "test-_/.%&#;1"
+			}
+		}],
+		"showQuery": true
+	}`
+
+	keys, payloadPoints := postAPIQueryAndCheck(t, payload, "ts12-_/.%&#;tsdb", 1, 5, 1, 0, 1)
+
+	assert.Equal(t, "test-_/.%&#;1", payloadPoints[0].Tags["hos-_/.%&#;t"])
+	assert.Equal(t, ts12IDTsdbQuery, payloadPoints[0].Tsuuids[0])
+
+	index := 0
+	expected := structs.TSDBquery{
+		Aggregator: "sum",
+		Metric:     "ts12-_/.%&#;tsdb",
+		Filters: []structs.TSDBfilter{{
+			Tagk:        "hos-_/.%&#;t",
+			Filter:      "test-_/.%&#;1",
+			GroupByResp: false,
+			Ftype:       "wildcard",
+		}},
+		Tags:        map[string]string{"hos-_/.%&#;t": "test-_/.%&#;1"},
+		Index:       &index,
+		Rate:        true,
+		RateOptions: &structs.TSDBrateOptions{Counter: true},
+	}
+	testSubQuery(t, expected, *payloadPoints[0].Query)
+
+	var i float32 = 1.0
+	dateStart := 1448452800
+	var countermax float32 = 15000.0
+	for _, key := range keys {
+
+		if dateStart < 1448453040 {
+
+			calc := ((i * 10.0) - i) / (float32(dateStart + 60 - dateStart))
+			assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
+
+			dateStart += 60
+			assert.Exactly(t, strconv.Itoa(dateStart), key)
+
+			i = i * 10.0
+		} else {
+			calc := (countermax - i + 1000) / (float32(dateStart + 60 - dateStart))
+			assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
+
+			dateStart += 60
+			assert.Exactly(t, strconv.Itoa(dateStart), key)
+		}
+	}
+}
+
+func TestTsdbQueryShowQueryRateTrueRateOptionsTrueResetValue(t *testing.T) {
+
+	payload := `{
+		"start": 1448452740000,
+		"end": 1448453100000,
+		"showTSUIDs": true,
+		"queries": [{
+			"metric": "ts12-_/.%&#;tsdb",
+			"rate": true,
+			"rateOptions": {
+				"counter": true,
+				"resetValue": 10
+			},
+			"aggregator": "sum",
+			"tags": {
+				"hos-_/.%&#;t": "test-_/.%&#;1"
+			}
+		}],
+		"showQuery": true
+	}`
+
+	keys, payloadPoints := postAPIQueryAndCheck(t, payload, "ts12-_/.%&#;tsdb", 1, 5, 1, 0, 1)
+
+	assert.Equal(t, "test-_/.%&#;1", payloadPoints[0].Tags["hos-_/.%&#;t"])
+	assert.Equal(t, ts12IDTsdbQuery, payloadPoints[0].Tsuuids[0])
+
+	index := 0
+	expected := structs.TSDBquery{
+		Aggregator: "sum",
+		Metric:     "ts12-_/.%&#;tsdb",
+		Filters: []structs.TSDBfilter{{
+			Tagk:        "hos-_/.%&#;t",
+			Filter:      "test-_/.%&#;1",
+			GroupByResp: false,
+			Ftype:       "wildcard",
+		}},
+		Tags:        map[string]string{"hos-_/.%&#;t": "test-_/.%&#;1"},
+		Index:       &index,
+		Rate:        true,
+		RateOptions: &structs.TSDBrateOptions{Counter: true, ResetValue: 10},
+	}
+	testSubQuery(t, expected, *payloadPoints[0].Query)
+
+	var i float32 = 1.0
+	dateStart := 1448452800
+	for _, key := range keys {
+
+		if dateStart < 1448453040 {
+
+			calc := ((i * 10.0) - i) / float32((dateStart+60)-dateStart)
+			assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
+
+			dateStart += 60
+			assert.Exactly(t, strconv.Itoa(dateStart), key)
+
+			i = i * 10.0
+		} else {
+			var calc float32
+			assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
+
+			dateStart += 60
+			assert.Exactly(t, strconv.Itoa(dateStart), key)
+		}
+	}
+}
+
+func TestTsdbQueryShowQueryRateTrueRateOptionsTrueCounterMaxAndResetValue(t *testing.T) {
+
+	payload := `{
+		"start": 1448452740000,
+		"end": 1448453460000,
+		"showTSUIDs": true,
+		"queries": [{
+			"metric": "ts12-_/.%&#;tsdb",
+			"rate": true,
+			"rateOptions": {
+				"counter": true,
+				"counterMax": 15000,
+				"resetValue": 233
+			},
+			"aggregator": "sum",
+			"tags": {
+				"hos-_/.%&#;t": "test-_/.%&#;1"
+			}
+		}],
+		"showQuery": true
+	}`
+
+	keys, payloadPoints := postAPIQueryAndCheck(t, payload, "ts12-_/.%&#;tsdb", 1, 11, 1, 0, 1)
+
+	assert.Equal(t, "test-_/.%&#;1", payloadPoints[0].Tags["hos-_/.%&#;t"])
+	assert.Equal(t, ts12IDTsdbQuery, payloadPoints[0].Tsuuids[0])
+
+	index, cM := 0, int64(15000)
+	expected := structs.TSDBquery{
+		Aggregator: "sum",
+		Metric:     "ts12-_/.%&#;tsdb",
+		Filters: []structs.TSDBfilter{{
+			Tagk:        "hos-_/.%&#;t",
+			Filter:      "test-_/.%&#;1",
+			GroupByResp: false,
+			Ftype:       "wildcard",
+		}},
+		Tags:        map[string]string{"hos-_/.%&#;t": "test-_/.%&#;1"},
+		Index:       &index,
+		Rate:        true,
+		RateOptions: &structs.TSDBrateOptions{true, &cM, 233},
+	}
+	testSubQuery(t, expected, *payloadPoints[0].Query)
+
+	var i float32 = 1.0
+	dateStart := 1448452800
+	var countermax float32 = 15000.0
+	for _, key := range keys {
+
+		if dateStart < 1448453040 {
+
+			calc := ((i * 10.0) - i) / float32((dateStart+60)-dateStart)
+			assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
+
+			dateStart += 60
+			assert.Exactly(t, strconv.Itoa(dateStart), key)
+
+			i = i * 10.0
+		} else if dateStart < 1448453100 {
+			calc := (countermax - i + 1000) / float32((dateStart+60)-dateStart)
+			assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
+
+			dateStart += 60
+			assert.Exactly(t, strconv.Itoa(dateStart), key)
+
+		} else if dateStart < 1448453160 {
+			var calc float32
+			assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
+
+			dateStart += 60
+			assert.Exactly(t, strconv.Itoa(dateStart), key)
+			i = 1.0
+
+		} else if dateStart < 1448453400 {
+			calc := ((i * 10.0) - i) / float32((dateStart+60)-dateStart)
+			assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
+
+			dateStart += 60
+			assert.Exactly(t, strconv.Itoa(dateStart), key)
+
+			i = i * 10.0
+		} else {
+			calc := (countermax - i + 3000.0) / float32((dateStart+60)-dateStart)
+			assert.Exactly(t, calc, float32(payloadPoints[0].Dps[key].(float64)))
+
+			dateStart += 60
+			assert.Exactly(t, strconv.Itoa(dateStart), key)
+		}
+	}
+}
+
+func TestTsdbQueryShowQueryRateTrueNoPoints(t *testing.T) {
+
+	payload := `{
+			"start": 1348452800000,
+			"end": 1348512200000,
+			"showTSUIDs": true,
+			"queries": [{
+				"metric": "ts01tsdb",
+				"rate": true,
+				"aggregator": "sum",
+				"tags": {
+					"host": "test"
+				}
+			}],
+			"showQuery": true
+		}`
+
+	code, response, err := mycenaeTools.HTTP.POST("keyspaces/"+ksMycenae+"/api/query", []byte(payload))
+	if err != nil {
+		t.Error(err)
+		t.SkipNow()
+	}
+
+	assert.Equal(t, 200, code)
+	assert.Exactly(t, "[]", string(response))
+
 }
 
 func TestTsdbQueryInvalid(t *testing.T) {
