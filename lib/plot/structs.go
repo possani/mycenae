@@ -30,7 +30,6 @@ type TsQuery struct {
 }
 
 func (query *TsQuery) Validate() gobol.Error {
-
 	i, err := utils.MilliToSeconds(query.Start)
 	if err != nil {
 		return errValidationS("ListPoints", err.Error())
@@ -42,13 +41,11 @@ func (query *TsQuery) Validate() gobol.Error {
 		return errValidationS("ListPoints", err.Error())
 	}
 	query.End = j
-
 	if query.End < query.Start {
 		return errValidationS("ListPoints", "end date should be equal or bigger than start date")
 	}
 
 	if len(query.Merge) > 0 {
-
 		for _, ks := range query.Merge {
 			if len(ks.Keys) < 2 {
 				return errValidationS(
@@ -89,7 +86,6 @@ func (query *TsQuery) Validate() gobol.Error {
 			query.Downsample.Options.Downsample != "min" &&
 			query.Downsample.Options.Downsample != "sum" &&
 			query.Downsample.Options.Downsample != "pnt" {
-
 			return errValidationS(
 				"ListPoints",
 				"valid approximation values are 'avg' 'sum' 'max' 'min' 'ptn'",

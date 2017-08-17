@@ -7,12 +7,14 @@ import (
 	"github.com/uol/gobol/rubber"
 	"github.com/uol/mycenae/lib/cluster"
 	"github.com/uol/mycenae/lib/depot"
+	"github.com/uol/mycenae/lib/meta"
 )
 
 type persistence struct {
 	cluster *cluster.Cluster
 	esTs    *rubber.Elastic
 	cass    *depot.Cassandra
+	meta    *meta.Meta
 }
 
 func (persist *persistence) ListESTags(
