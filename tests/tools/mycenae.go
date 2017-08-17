@@ -188,8 +188,6 @@ const TagValueForm string = "testTagValue-"
 
 var Sleep2 = 2 * time.Second
 var Sleep3 = 3 * time.Second
-var Sleep4 = 4 * time.Second
-var Sleep5 = 5 * time.Second
 
 func (m *mycenaeTool) Init(set MycenaeSettings) {
 	ht := new(httpTool)
