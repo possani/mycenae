@@ -131,27 +131,20 @@ func main() {
 	if err != nil {
 		tsLogger.Fatal("", zap.Error(err))
 	}
+
 	go func() {
+		time.Sleep(time.Duration(settings.Cluster.ApplyWait) * time.Second)
 		logger := tsLogger.With(
 			zap.String("func", "main"),
 			zap.String("package", "main"),
 		)
 
 		for pts := range wal.Load() {
-			for _, p := range pts {
-				err := cluster.WAL(&p)
-				if err != nil {
-					logger.Error(
-						"failure loading point from write-ahead-log (wal)",
-						zap.Error(err),
-					)
-				}
-			}
+			cluster.WAL(pts)
 		}
 		logger.Debug("finished loading points")
 	}()
 
-	time.Sleep(30 * time.Second)
 	limiter, err := limiter.New(settings.MaxRateLimit, settings.Burst, tsLogger)
 	if err != nil {
 		tsLogger.Fatal(err.Error())
@@ -210,10 +203,6 @@ func main() {
 	tsRest.Start()
 
 	tsLogger.Info("Mycenae started successfully")
-
-	/*
-
-	 */
 
 	signalChannel := make(chan os.Signal, 1)
 	signal.Notify(signalChannel, os.Interrupt, syscall.SIGTERM, syscall.SIGHUP)

@@ -67,16 +67,16 @@ func (bc *Bcache) Get(ksts []byte) bool {
 	return ok
 }
 
-// Set sets the LRU cache
-func (bc *Bcache) Set(key string) {
+func (bc *Bcache) Set(key string) gobol.Error {
 	gerr := bc.persist.Put([]byte("number"), []byte(key), []byte{})
 	if gerr != nil {
-		return
+		return gerr
 	}
 
 	bc.tsmtx.Lock()
 	bc.tsmap.Add(key, nil)
 	bc.tsmtx.Unlock()
+	return nil
 }
 
 func (bc *Bcache) getTSID(esType, bucket, key string, CheckTSID func(esType, id string) (bool, gobol.Error)) (bool, gobol.Error) {

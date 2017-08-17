@@ -151,7 +151,8 @@ func (meta *elasticMeta) metaCoordinator(saveInterval time.Duration, headInterva
 					if gerr != nil {
 						meta.logger.Error(
 							gerr.Error(),
-							zap.String("func", "metaCoordinator/SaveBulkES"),
+							zap.String("func", "metaCoordinator"),
+							zap.Error(gerr),
 						)
 						continue
 					}
@@ -162,9 +163,16 @@ func (meta *elasticMeta) metaCoordinator(saveInterval time.Duration, headInterva
 							continue
 						}
 					}
-					time.Sleep(headInterval)
-					meta.boltc.Set(ksts)
+
+					if gerr := meta.boltc.Set(ksts); gerr != nil {
+						meta.logger.Error(
+							gerr.Error(),
+							zap.String("func", "metaCoordinator"),
+							zap.Error(gerr),
+						)
+					}
 					meta.sm.del(ksts)
+					time.Sleep(headInterval)
 				}
 			}
 		}
