@@ -1340,7 +1340,7 @@ func TestRESTv2BucketFuturePointsAtOnceAndThenPast(t *testing.T) {
 
 	statusCode, _, _ := mycenaeTools.HTTP.POST("api/put", ps.Marshal())
 	assert.Equal(t, 204, statusCode)
-	time.Sleep(tools.Sleep3)
+	time.Sleep(tools.Sleep4)
 
 	hashID := mycenaeTools.Cassandra.Timeseries.GetHashFromMetricAndTags(metric, tags)
 

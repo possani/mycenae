@@ -72,7 +72,7 @@ func TestUDPv2MultiplePointsSameIDAndTimestampsGreaterThanDay(t *testing.T) {
 
 	hashID := mycenaeTools.Cassandra.Timeseries.GetHashFromMetricAndTags(p.Metric, p.Tags)
 
-	time.Sleep(tools.Sleep2)
+	time.Sleep(tools.Sleep3)
 
 	for i := 0; i < 5; i++ {
 		assertMycenae(t, ksMycenae, timestamps[i], timestamps[i], values[i], hashID)
@@ -119,7 +119,7 @@ func TestUDPv2CheckLocalElasticCache(t *testing.T) {
 		*p.Timestamp = time.Now().Unix()
 		mycenaeTools.UDP.Send(p.Marshal())
 
-		time.Sleep(tools.Sleep2)
+		time.Sleep(tools.Sleep3)
 
 		assertMycenae(t, ksMycenae, *p.Timestamp, *p.Timestamp, *p.Value, hashID)
 	}
@@ -751,7 +751,7 @@ func TestUDPv2BucketLimits(t *testing.T) {
 		mycenaeTools.UDP.Send(p.Marshal())
 	}
 
-	time.Sleep(tools.Sleep2)
+	time.Sleep(tools.Sleep4)
 
 	for i := 0; i < 6; i++ {
 
@@ -797,7 +797,7 @@ func TestUDPv2Bucket53WeeksYear(t *testing.T) {
 		mycenaeTools.UDP.Send(p.Marshal())
 	}
 
-	time.Sleep(tools.Sleep2)
+	time.Sleep(tools.Sleep4)
 
 	for i := 0; i < 6; i++ {
 
@@ -837,7 +837,7 @@ func TestUDPv2Bucket52WeeksYear(t *testing.T) {
 		mycenaeTools.UDP.Send(p.Marshal())
 	}
 
-	time.Sleep(tools.Sleep2)
+	time.Sleep(tools.Sleep5)
 
 	for i := 0; i < 6; i++ {
 
@@ -877,7 +877,7 @@ func TestUDPv2BucketFullYear(t *testing.T) {
 		day = day.AddDate(0, 0, 7)
 	}
 
-	time.Sleep(tools.Sleep2)
+	time.Sleep(tools.Sleep5)
 
 	for i := 0; i < 52; i++ {
 
@@ -905,7 +905,7 @@ func TestUDPv2BucketFuturePoints(t *testing.T) {
 
 		mycenaeTools.UDP.Send(p.Marshal())
 
-		time.Sleep(tools.Sleep2)
+		time.Sleep(tools.Sleep3)
 
 		assertMycenae(t, ksMycenae, *p.Timestamp, *p.Timestamp, *p.Value, hashID)
 
@@ -931,7 +931,7 @@ func TestUDPv2BucketFuturePoints(t *testing.T) {
 func sendUDPPayloadAndAssertPoint(t *testing.T, payload *tools.Payload, start, end int64) {
 
 	mycenaeTools.UDP.Send(payload.Marshal())
-	time.Sleep(tools.Sleep2)
+	time.Sleep(tools.Sleep3)
 
 	hashID := mycenaeTools.Cassandra.Timeseries.GetHashFromMetricAndTags(payload.Metric, payload.Tags)
 

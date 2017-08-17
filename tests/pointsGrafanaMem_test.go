@@ -109,8 +109,8 @@ func ts10TsdbQueryMem(keyspace string) bool {
 	tagValue2 := "test1"
 	tagValue3 := "app1"
 	startTime := hashMapStartTime["ts1TsdbQueryMem"]
-	var value, value2 float32
-	const numTotal int = 75
+	var value, value2 float32 = 0, 1
+	const numTotal int = 50
 	Points := [numTotal]tools.Point{}
 
 	for i := 0; i < numTotal; i++ {
@@ -126,28 +126,15 @@ func ts10TsdbQueryMem(keyspace string) bool {
 		Points[i].Value = value2
 		Points[i].Metric = metric
 		Points[i].Tags = map[string]string{
-			"ksid": keyspace,
-
-			tagKey:  tagValue2,
-			tagKey2: tagValue3,
-		}
-		Points[i].Timestamp = int64(startTime)
-		i++
-		value2++
-
-		Points[i].Value = value2
-		Points[i].Metric = metric
-		Points[i].Tags = map[string]string{
-			"ksid": keyspace,
-
+			"ksid":  keyspace,
 			tagKey:  tagValue2,
 			tagKey2: tagValue3,
 		}
 		Points[i].Timestamp = int64(startTime)
 
-		startTime += 60
 		value++
-		value2++
+		value2 += 2
+		startTime += 60
 	}
 
 	jsonPoints, err := json.Marshal(Points)
@@ -7686,24 +7673,24 @@ func TestTsdbQueryMemShowQueryFilterGroupByTagNotFound(t *testing.T) {
 func TestTsdbQueryMemShowQueryWithTwoFilters(t *testing.T) {
 
 	payload := fmt.Sprintf(`{
-			"start": %v,
-			"queries": [{
-				"metric": "ts10tsdbmem",
-				"aggregator": "avg",
-				"filters": [{
-					"type": "wildcard",
-					"tagk": "host",
-					"filter": "*",
-					"groupBy": true
-				},{
-					"type": "wildcard",
-					"tagk": "app",
-					"filter": "*",
-					"groupBy": true
-				}]
-			}],
-			"showQuery": true
-		}`, hashMapStartTime["ts1TsdbQueryMem"])
+		"start": %v,
+		"queries": [{
+			"metric": "ts10tsdbmem",
+			"aggregator": "avg",
+			"filters": [{
+				"type": "wildcard",
+				"tagk": "host",
+				"filter": "*",
+				"groupBy": true
+			},{
+				"type": "wildcard",
+				"tagk": "app",
+				"filter": "*",
+				"groupBy": true
+			}]
+		}],
+		"showQuery": true
+	}`, hashMapStartTime["ts1TsdbQueryMem"])
 
 	keys, payloadPoints := postAPIQueryAndCheck(t, payload, "ts10tsdbmem", 1, 25, 2, 0, 0)
 

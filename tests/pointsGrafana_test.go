@@ -220,9 +220,8 @@ func ts10TsdbQuery(keyspace string) {
 	tagValue2 := "test1"
 	tagValue3 := "app1"
 	startTime := 1448452800
-	value := 0.0
-	value2 := 0.0
-	const numTotal int = 75
+	var value, value2 float32 = 0, 1
+	const numTotal int = 50
 	Points := [numTotal]tools.Point{}
 
 	for i := 0; i < numTotal; i++ {
@@ -243,21 +242,10 @@ func ts10TsdbQuery(keyspace string) {
 			tagKey2: tagValue3,
 		}
 		Points[i].Timestamp = int64(startTime)
-		i++
-		value2++
 
-		Points[i].Value = float32(value2)
-		Points[i].Metric = metric
-		Points[i].Tags = map[string]string{
-			"ksid":  keyspace,
-			tagKey:  tagValue2,
-			tagKey2: tagValue3,
-		}
-		Points[i].Timestamp = int64(startTime)
-
-		startTime += 60
 		value++
-		value2++
+		value2 += 2
+		startTime += 60
 	}
 
 	sendPointsGrafana("ts10tsdb:", Points)
