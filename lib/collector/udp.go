@@ -37,6 +37,7 @@ func (collector *Collector) HandleUDPpacket(buf []byte, addr string) {
 		}
 
 		collector.fail(gerr, addr)
+		atomic.AddInt64(&collector.saving, -1)
 		return
 	}
 
