@@ -10,6 +10,7 @@ import (
 	"github.com/uol/gobol/snitch"
 	"github.com/uol/mycenae/lib/bcache"
 	pb "github.com/uol/mycenae/lib/proto"
+	"github.com/uol/mycenae/lib/structs"
 	"github.com/uol/mycenae/lib/tsstats"
 	"go.uber.org/zap"
 )
@@ -53,7 +54,7 @@ func makeTestElastic() (*elasticMeta, error) {
 		return nil, err
 	}
 
-	meta, err := createElasticMeta(logger, stats, elastic, cache, &Settings{
+	meta, err := createElasticMeta(logger, stats, elastic, cache, &structs.MetaSettings{
 		MetaSaveInterval:    time.Second.String(),
 		MaxConcurrentBulks:  1,
 		MaxConcurrentPoints: 1024,

@@ -10,6 +10,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/golang/snappy"
+	"github.com/uol/mycenae/lib/structs"
 	"github.com/uol/mycenae/lib/wal"
 )
 
@@ -490,7 +491,7 @@ func TestWAL_ClosedSegments(t *testing.T) {
 		t.Fatalf("error initializing zap logger: %v", err)
 	}
 
-	s := &wal.Settings{
+	s := &structs.WALSettings{
 		PathWAL:            dir,
 		SyncInterval:       "1s",
 		CleanupInterval:    "1h",
@@ -557,7 +558,7 @@ func TestWAL_Delete(t *testing.T) {
 		t.Fatalf("error initializing zap logger: %v", err)
 	}
 
-	s := &wal.Settings{
+	s := &structs.WALSettings{
 		PathWAL:            dir,
 		SyncInterval:       "1s",
 		CleanupInterval:    "1h",

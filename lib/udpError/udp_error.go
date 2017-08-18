@@ -7,9 +7,9 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/uol/gobol"
-	"github.com/uol/gobol/rubber"
 
 	"github.com/uol/mycenae/lib/keyspace"
+	"github.com/uol/mycenae/lib/meta"
 	"github.com/uol/mycenae/lib/tsstats"
 )
 
@@ -23,7 +23,7 @@ func New(
 	sts *tsstats.StatsTS,
 	cass *gocql.Session,
 	kspace *keyspace.Keyspace,
-	es *rubber.Elastic,
+	meta *meta.Meta,
 	esIndex string,
 	consistencies []gocql.Consistency,
 ) *UDPerror {
@@ -32,7 +32,8 @@ func New(
 	stats = sts
 
 	return &UDPerror{
-		persist: persistence{cassandra: cass, esearch: es, consistencies: consistencies},
+		persist: persistence{cassandra: cass, meta: meta, consistencies: consistencies},
+		meta:    meta,
 		kspace:  kspace,
 		esIndex: esIndex,
 	}
@@ -40,6 +41,7 @@ func New(
 
 type UDPerror struct {
 	persist persistence
+	meta    *meta.Meta
 	kspace  *keyspace.Keyspace
 	esIndex string
 }
@@ -55,74 +57,4 @@ func (ue UDPerror) getErrorInfo(keyspace, key string) ([]ErrorInfo, gobol.Error)
 	}
 
 	return ue.persist.GetErrorInfo(fmt.Sprintf("%s%s", key, keyspace))
-}
-
-func (ue UDPerror) listErrorTags(
-	keyspace,
-	esType,
-	metric string,
-	tags []Tag,
-	size,
-	from int64,
-) ([]string, int, gobol.Error) {
-	found, gerr := ue.kspace.KeyspaceExists(keyspace)
-	if gerr != nil {
-		return nil, 0, gerr
-	}
-
-	if !found {
-		return nil, 0, errNotFound("ListErrorTags")
-	}
-
-	var esQuery QueryWrapper
-	if metric != "" {
-		metricTerm := EsRegexp{
-			Regexp: map[string]string{
-				"metric": metric,
-			},
-		}
-		esQuery.Query.Bool.Must = append(esQuery.Query.Bool.Must, metricTerm)
-	}
-
-	for _, tag := range tags {
-		if tag.Key != "" {
-			tagKeyTerm := EsRegexp{
-				Regexp: map[string]string{
-					"tagsError.tagKey": tag.Key,
-				},
-			}
-			esQuery.Query.Bool.Must = append(esQuery.Query.Bool.Must, tagKeyTerm)
-		}
-
-		if tag.Value != "" {
-			tagValueTerm := EsRegexp{
-				Regexp: map[string]string{
-					"tagsError.tagValue": tag.Value,
-				},
-			}
-			esQuery.Query.Bool.Must = append(esQuery.Query.Bool.Must, tagValueTerm)
-		}
-	}
-
-	if size != 0 {
-		esQuery.Size = size
-	} else {
-		esQuery.Size = 50
-	}
-
-	if from != 0 {
-		esQuery.From = from
-	}
-
-	var esResp EsResponseTag
-	gerr = ue.persist.ListESErrorTags(keyspace, esType, esQuery, &esResp)
-	total := esResp.Hits.Total
-
-	var keys []string
-	for _, docs := range esResp.Hits.Hits {
-		key := docs.Id
-		keys = append(keys, key)
-	}
-
-	return keys, total, gerr
 }

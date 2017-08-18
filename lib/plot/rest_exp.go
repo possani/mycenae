@@ -443,8 +443,7 @@ func (plot *Plot) expandStruct(
 	}
 
 	if needExpand {
-
-		tsobs, total, gerr := plot.MetaFilterOpenTSDB(
+		tsobs, total, gerr := plot.meta.MetaFilterOpenTSDB(
 			keyspace,
 			"",
 			tsdb.Metric,

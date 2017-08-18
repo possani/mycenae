@@ -52,21 +52,6 @@ type WAL struct {
 }
 */
 
-type Settings struct {
-	PathWAL         string
-	SyncInterval    string
-	syncInterval    time.Duration
-	CleanupInterval string
-	cleanupInterval time.Duration
-
-	CheckPointInterval string
-	checkPointInterval time.Duration
-	CheckPointPath     string
-
-	MaxBufferSize int
-	MaxConcWrite  int
-}
-
 type tt struct {
 	mtx   sync.RWMutex
 	save  bool
@@ -114,7 +99,7 @@ func (wal *WAL) Stop() {
 func (wal *WAL) worker() {
 	go func() {
 		maxBufferSize := wal.settings.MaxBufferSize
-		si := wal.settings.syncInterval
+		si := wal.syncInterval
 		ticker := time.NewTicker(500 * time.Millisecond)
 		buffer := make([]pb.Point, maxBufferSize)
 		buffTimer := time.Now()
@@ -203,7 +188,7 @@ func (wal *WAL) checkpoint() {
 
 	go func() {
 
-		ticker := time.NewTicker(wal.settings.checkPointInterval)
+		ticker := time.NewTicker(wal.checkPointInterval)
 		fileName := filepath.Join(wal.settings.CheckPointPath, checkPointName)
 
 		for {
@@ -512,7 +497,7 @@ func (wal *WAL) loadCheckpoint() (int64, map[string]int64, error) {
 func (wal *WAL) cleanup() {
 
 	go func() {
-		ticker := time.NewTicker(wal.settings.cleanupInterval)
+		ticker := time.NewTicker(wal.cleanupInterval)
 		for {
 			select {
 			case <-ticker.C:

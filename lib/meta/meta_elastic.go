@@ -16,6 +16,7 @@ import (
 	"github.com/uol/gobol/rubber"
 	"github.com/uol/mycenae/lib/bcache"
 	pb "github.com/uol/mycenae/lib/proto"
+	"github.com/uol/mycenae/lib/structs"
 	"github.com/uol/mycenae/lib/tsstats"
 	"github.com/uol/mycenae/lib/utils"
 	"go.uber.org/zap"
@@ -24,8 +25,7 @@ import (
 type elasticMeta struct {
 	boltc    *bcache.Bcache
 	validKey *regexp.Regexp
-	settings *Settings
-	persist  persistence
+	settings *structs.MetaSettings
 	esearch  *rubber.Elastic
 	stats    *tsstats.StatsTS
 	logger   *zap.Logger
@@ -82,22 +82,12 @@ func (so *savingObj) iter() <-chan string {
 	return c
 }
 
-// Settings defines the settings for elasticsearch backend
-type Settings struct {
-	MetaSaveInterval    string
-	MaxConcurrentBulks  int
-	MaxConcurrentPoints int
-	MaxMetaBulkSize     int
-	MetaBufferSize      int
-	MetaHeadInterval    string
-}
-
 func createElasticMeta(
 	log *zap.Logger,
 	sts *tsstats.StatsTS,
 	es *rubber.Elastic,
 	bc *bcache.Bcache,
-	set *Settings,
+	set *structs.MetaSettings,
 ) (*elasticMeta, error) {
 	d, err := time.ParseDuration(set.MetaSaveInterval)
 	if err != nil {
@@ -116,13 +106,9 @@ func createElasticMeta(
 		metaPntChan: make(chan *pb.Meta, set.MetaBufferSize),
 		metaTxtChan: make(chan *pb.Meta, set.MetaBufferSize),
 		metaPayload: bytes.NewBuffer(nil),
-		persist: persistence{
-			esearch: es,
-			stats:   sts,
-		},
-		stats:  sts,
-		logger: log,
-		sm:     &savingObj{mm: make(map[string]*pb.Meta)},
+		stats:       sts,
+		logger:      log,
+		sm:          &savingObj{mm: make(map[string]*pb.Meta)},
 	}
 
 	m.logger.Debug(
@@ -492,8 +478,8 @@ func (meta *elasticMeta) SendError(index, dtype, id string, doc ErrorData) gobol
 func (meta *elasticMeta) CreateIndex(index string) gobol.Error {
 	start := time.Now()
 	body := bytes.NewBuffer(nil)
-	body.WriteString(`{"mappings":{"meta":{"properties":{"tagsNested":{"type":"nested","properties":{"tagKey":{"type":"string"},"tagValue":{"type":"string"}}}}},"metatext":{"properties":{"tagsNested":{"type":"nested","properties":{"tagKey":{"type":"string"},"tagValue":{"type":"string"}}}}}}}`)
-	_, err := meta.persist.esearch.CreateIndex(index, body)
+	body.WriteString(mappingIndex)
+	_, err := meta.esearch.CreateIndex(index, body)
 	if err != nil {
 		statsIndexError(meta.stats, index, "", "post")
 		return errPersist("CreateIndex", err)
@@ -504,7 +490,7 @@ func (meta *elasticMeta) CreateIndex(index string) gobol.Error {
 
 func (meta *elasticMeta) DeleteIndex(index string) gobol.Error {
 	start := time.Now()
-	_, err := meta.persist.esearch.DeleteIndex(index)
+	_, err := meta.esearch.DeleteIndex(index)
 	if err != nil {
 		statsIndexError(meta.stats, index, "", "delete")
 		return errPersist("DeleteIndex", err)

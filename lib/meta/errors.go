@@ -54,3 +54,7 @@ func errMarshal(f string, e error) gobol.Error {
 func errPersist(f string, e error) gobol.Error {
 	return errISE(f, e.Error(), e)
 }
+
+func errNotImplemented(fname, structure string) gobol.Error {
+	return errISE(fname, structure, errors.New("Not implemented error"))
+}

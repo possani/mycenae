@@ -5,6 +5,7 @@ import (
 
 	"github.com/uol/gobol"
 	pb "github.com/uol/mycenae/lib/proto"
+	"github.com/uol/mycenae/lib/structs"
 	index "github.com/uol/mycenae/lib/ts-index"
 	"go.uber.org/zap"
 )
@@ -78,17 +79,63 @@ func (m *localMeta) SaveTxtMeta(packet *pb.Meta) {
 	m.index.Get(keyspace, "metatext").Add(metric, tags, timeseries)
 }
 
-func (m *localMeta) CheckTSID(esType, id string) (bool, gobol.Error) {
+func (m *localMeta) CheckTSID(dtype, id string) (bool, gobol.Error) {
 	info := strings.Split(id, "|")
 	esindex, id := info[0], info[1]
-	exists, err := m.index.Get(esindex, esType).Exists(index.ParseID(id))
+	exists, err := m.index.Get(esindex, dtype).Exists(index.ParseID(id))
 	if err != nil {
 		return false, errPersist("Exists", err)
 	}
 	return exists, nil
 }
 
-func (m *localMeta) SendError(index, dtype, id string, doc ErrorData) gobol.Error { return nil }
+func (m *localMeta) SendError(index, dtype, id string, doc ErrorData) gobol.Error {
+	return errNotImplemented("SendError", "localMeta")
+}
+
+func (m *localMeta) ListTags(keyspace, dtype, tagkey string, size, from int64) ([]string, int, gobol.Error) {
+	return nil, 0, errNotImplemented("ListTags", "localMeta")
+}
+
+func (m *localMeta) ListMetrics(keyspace, esType, metricName string, size, from int64) ([]string, int, gobol.Error) {
+	return nil, 0, errNotImplemented("ListMetrics", "localMeta")
+}
+
+func (m *localMeta) ListTagKey(keyspace, tagKname string, size, from int64) ([]string, int, gobol.Error) {
+	return nil, 0, errNotImplemented("ListTagKey", "localMeta")
+}
+
+func (m *localMeta) ListTagValue(keyspace, tagVname string, size, from int64) ([]string, int, gobol.Error) {
+	return nil, 0, errNotImplemented("ListTagValue", "localMeta")
+}
+
+func (m *localMeta) ListMeta(
+	keyspace, esType, metric string, tags map[string]string,
+	onlyids bool, size, from int64,
+) ([]TSInfo, int, gobol.Error) {
+	return nil, 0, errNotImplemented("ListMeta", "localMeta")
+}
+
+func (m *localMeta) MetaOpenTSDB(
+	keyspace, id, metric string, tags map[string][]string,
+	size, from int64,
+) ([]TSDBData, int, gobol.Error) {
+	return nil, 0, errNotImplemented("MetaOpenTSDB", "localMeta")
+}
+
+func (m *localMeta) MetaFilterOpenTSDB(
+	keyspace, id, metric string,
+	filters []structs.TSDBfilter, size int64,
+) ([]TSDBData, int, gobol.Error) {
+	return nil, 0, errNotImplemented("MetaFilterOpenTSDB", "localMeta")
+}
+
+func (m *localMeta) ListErrorTags(
+	keyspace, esType, metric string,
+	tags []Tag, size, from int64,
+) ([]string, int, gobol.Error) {
+	return nil, 0, errNotImplemented("ListErrorTags", "localMeta")
+}
 
 func (m *localMeta) CreateIndex(name string) gobol.Error {
 	m.index.Add(name, "meta", index.Create())

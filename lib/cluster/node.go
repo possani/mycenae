@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"sync"
+	"time"
 
 	"golang.org/x/time/rate"
 
@@ -14,13 +15,13 @@ import (
 
 	"github.com/uol/gobol"
 	pb "github.com/uol/mycenae/lib/proto"
+	"github.com/uol/mycenae/lib/structs"
 	"go.uber.org/zap"
 )
 
 type node struct {
 	address string
 	port    int
-	conf    Config
 	mtx     sync.RWMutex
 	ptsCh   chan []*pb.Point
 	metaCh  chan []*pb.Meta
@@ -31,9 +32,11 @@ type node struct {
 	wLimiter *rate.Limiter
 	rLimiter *rate.Limiter
 	mLimiter *rate.Limiter
+
+	gRPCtimeout time.Duration
 }
 
-func newNode(address string, port int, conf Config) (*node, gobol.Error) {
+func newNode(address string, port int, grpcTimeout time.Duration, conf structs.ClusterConfig) (*node, gobol.Error) {
 
 	//cred, err := newClientTLSFromFile(conf.Consul.CA, conf.Consul.Cert, conf.Consul.Key, "*")
 	cred, err := credentials.NewClientTLSFromFile(conf.Consul.Cert, "localhost.consul.macs.intranet")
@@ -55,16 +58,16 @@ func newNode(address string, port int, conf Config) (*node, gobol.Error) {
 	)
 
 	node := &node{
-		address:  address,
-		port:     port,
-		conf:     conf,
-		conn:     conn,
-		ptsCh:    make(chan []*pb.Point, 5),
-		metaCh:   make(chan []*pb.Meta, 5),
-		wLimiter: rate.NewLimiter(rate.Limit(conf.GrpcMaxServerConn)*0.9, conf.GrpcBurstServerConn),
-		rLimiter: rate.NewLimiter(rate.Limit(conf.GrpcMaxServerConn)*0.1, conf.GrpcBurstServerConn),
-		mLimiter: rate.NewLimiter(rate.Limit(conf.GrpcMaxServerConn)*0.1, conf.GrpcBurstServerConn),
-		client:   pb.NewTimeseriesClient(conn),
+		address:     address,
+		port:        port,
+		conn:        conn,
+		ptsCh:       make(chan []*pb.Point, 5),
+		metaCh:      make(chan []*pb.Meta, 5),
+		wLimiter:    rate.NewLimiter(rate.Limit(conf.GrpcMaxServerConn)*0.9, conf.GrpcBurstServerConn),
+		rLimiter:    rate.NewLimiter(rate.Limit(conf.GrpcMaxServerConn)*0.1, conf.GrpcBurstServerConn),
+		mLimiter:    rate.NewLimiter(rate.Limit(conf.GrpcMaxServerConn)*0.1, conf.GrpcBurstServerConn),
+		client:      pb.NewTimeseriesClient(conn),
+		gRPCtimeout: grpcTimeout,
 	}
 
 	return node, nil
@@ -72,7 +75,7 @@ func newNode(address string, port int, conf Config) (*node, gobol.Error) {
 
 func (n *node) write(pts []*pb.Point) error {
 
-	ctx, cancel := context.WithTimeout(context.Background(), n.conf.gRPCtimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), n.gRPCtimeout)
 	defer cancel()
 
 	if err := n.wLimiter.Wait(ctx); err != nil {
@@ -146,7 +149,7 @@ func (n *node) write(pts []*pb.Point) error {
 
 func (n *node) read(ksid, tsid string, start, end int64) ([]*pb.Point, gobol.Error) {
 
-	ctx, cancel := context.WithTimeout(context.Background(), n.conf.gRPCtimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), n.gRPCtimeout)
 	defer cancel()
 
 	if err := n.rLimiter.Wait(ctx); err != nil {
@@ -176,7 +179,7 @@ func (n *node) read(ksid, tsid string, start, end int64) ([]*pb.Point, gobol.Err
 
 func (n *node) meta(metas []*pb.Meta) (<-chan *pb.MetaFound, error) {
 
-	ctx, cancel := context.WithTimeout(context.Background(), n.conf.gRPCtimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), n.gRPCtimeout)
 
 	if err := n.mLimiter.Wait(ctx); err != nil {
 		logger.Error(

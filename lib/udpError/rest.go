@@ -58,7 +58,7 @@ func (uerror *UDPerror) ListErrorTags(w http.ResponseWriter, r *http.Request, ps
 		}
 	}
 
-	keys, total, gerr := uerror.listErrorTags(
+	keys, total, gerr := uerror.meta.ListErrorTags(
 		ks,
 		"errortag",
 		query.Metric,

@@ -267,7 +267,7 @@ func (plot *Plot) listTags(
 		}
 	}
 
-	tags, total, gerr := plot.ListTags(keyspace, esType, q.Get("tag"), int64(size), int64(from))
+	tags, total, gerr := plot.meta.ListTags(keyspace, esType, q.Get("tag"), int64(size), int64(from))
 	if gerr != nil {
 		rip.Fail(w, gerr)
 		return
@@ -335,7 +335,7 @@ func (plot *Plot) listMetrics(w http.ResponseWriter, r *http.Request, ps httprou
 		}
 	}
 
-	metrics, total, gerr := plot.ListMetrics(keyspace, esType, q.Get("metric"), int64(size), int64(from))
+	metrics, total, gerr := plot.meta.ListMetrics(keyspace, esType, q.Get("metric"), int64(size), int64(from))
 	if gerr != nil {
 		rip.Fail(w, gerr)
 		return
@@ -431,7 +431,7 @@ func (plot *Plot) listMeta(
 		tags[tag.Key] = tag.Value
 	}
 
-	keys, total, gerr := plot.ListMeta(keyspace, esType, query.Metric, tags, onlyids, int64(size), int64(from))
+	keys, total, gerr := plot.meta.ListMeta(keyspace, esType, query.Metric, tags, onlyids, int64(size), int64(from))
 	if gerr != nil {
 		rip.Fail(w, gerr)
 		return
