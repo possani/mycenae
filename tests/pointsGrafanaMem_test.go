@@ -8158,7 +8158,7 @@ func TestTsdbQueryMemShowQueryRateTrueRateOptionsTrueCounterMax(t *testing.T) {
 	assert.Equal(t, "test-_/.%&#;1", payloadPoints[0].Tags["hos-_/.%&#;t"])
 	assert.Equal(t, ts12IDTsdbQuery, payloadPoints[0].Tsuuids[0])
 
-	index := 0
+	index, cM := 0, int64(15000)
 	expected := structs.TSDBquery{
 		Aggregator: "sum",
 		Metric:     "ts12-_/.%&#;tsdb",
@@ -8171,7 +8171,7 @@ func TestTsdbQueryMemShowQueryRateTrueRateOptionsTrueCounterMax(t *testing.T) {
 		Tags:        map[string]string{"hos-_/.%&#;t": "test-_/.%&#;1"},
 		Index:       &index,
 		Rate:        true,
-		RateOptions: &structs.TSDBrateOptions{Counter: true},
+		RateOptions: &structs.TSDBrateOptions{Counter: true, CounterMax: &cM},
 	}
 	testSubQuery(t, expected, *payloadPoints[0].Query)
 
