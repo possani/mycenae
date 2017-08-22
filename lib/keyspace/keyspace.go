@@ -48,6 +48,7 @@ func New(
 			keyspaceMain:  keyspaceMain,
 			compaction:    compaction,
 			stats:         sts,
+			meta:          meta,
 		},
 		cache: make(map[string]bool),
 	}

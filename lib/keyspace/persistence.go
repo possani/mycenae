@@ -1,7 +1,6 @@
 package keyspace
 
 import (
-	"bytes"
 	"fmt"
 	"time"
 
@@ -397,12 +396,6 @@ func (persist *persistence) listDatacenters() ([]string, gobol.Error) {
 
 func (persist *persistence) createIndex(esIndex string) gobol.Error {
 	start := time.Now()
-
-	body := &bytes.Buffer{}
-	body.WriteString(
-		`{"mappings":{"meta":{"properties":{"tagsNested":{"type":"nested","properties":{"tagKey":{"type":"string"},"tagValue":{"type":"string"}}}}},"metatext":{"properties":{"tagsNested":{"type":"nested","properties":{"tagKey":{"type":"string"},"tagValue":{"type":"string"}}}}}}}`,
-	)
-
 	err := persist.meta.CreateIndex(esIndex)
 	if err != nil {
 		statsIndexError(persist.stats, esIndex, "", "post")
