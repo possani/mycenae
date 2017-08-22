@@ -27,6 +27,7 @@ import (
 	"github.com/uol/mycenae/lib/limiter"
 	tsmeta "github.com/uol/mycenae/lib/meta"
 	"github.com/uol/mycenae/lib/plot"
+	pb "github.com/uol/mycenae/lib/proto"
 	"github.com/uol/mycenae/lib/rest"
 	"github.com/uol/mycenae/lib/structs"
 	"github.com/uol/mycenae/lib/tsstats"
@@ -127,7 +128,7 @@ func main() {
 	strg := gorilla.New(tsLogger, tssts, d, wal)
 	strg.Start()
 
-	cluster, err := cluster.New(tsLogger, strg, meta, settings.Cluster)
+	cluster, err := cluster.New(tsLogger, strg, meta, &settings.Cluster, settings.WAL)
 	if err != nil {
 		tsLogger.Fatal("", zap.Error(err))
 	}
@@ -139,8 +140,29 @@ func main() {
 			zap.String("package", "main"),
 		)
 
+		limiter := make(chan interface{}, settings.MaxConcurrentPoints/2)
+		defer close(limiter)
 		for pts := range wal.Load() {
-			cluster.WAL(pts)
+
+			for _, p := range pts {
+				limiter <- struct{}{}
+				if p == nil {
+					continue
+				}
+				go func(p *pb.Point) {
+					gerr := strg.WAL(p)
+					if gerr != nil {
+						logger.Error(
+							"unable to write in local node",
+							zap.String("package", "main"),
+							zap.String("func", "main"),
+							zap.Error(gerr),
+						)
+					}
+					<-limiter
+				}(p)
+			}
+
 		}
 		logger.Debug("finished loading points")
 	}()

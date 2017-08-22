@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -16,12 +17,14 @@ import (
 	"github.com/uol/gobol"
 	pb "github.com/uol/mycenae/lib/proto"
 	"github.com/uol/mycenae/lib/structs"
+	"github.com/uol/mycenae/lib/wal"
 	"go.uber.org/zap"
 )
 
 type node struct {
 	address string
 	port    int
+	conf    *structs.ClusterConfig
 	mtx     sync.RWMutex
 	ptsCh   chan []*pb.Point
 	metaCh  chan []*pb.Meta
@@ -32,11 +35,12 @@ type node struct {
 	wLimiter *rate.Limiter
 	rLimiter *rate.Limiter
 	mLimiter *rate.Limiter
+	wal      *wal.WAL
 
 	gRPCtimeout time.Duration
 }
 
-func newNode(address string, port int, grpcTimeout time.Duration, conf structs.ClusterConfig) (*node, gobol.Error) {
+func newNode(address string, port int, grpcTimeout time.Duration, conf *structs.ClusterConfig, walConf *structs.WALSettings) (*node, gobol.Error) {
 
 	//cred, err := newClientTLSFromFile(conf.Consul.CA, conf.Consul.Cert, conf.Consul.Key, "*")
 	cred, err := credentials.NewClientTLSFromFile(conf.Consul.Cert, "localhost.consul.macs.intranet")
@@ -48,6 +52,15 @@ func newNode(address string, port int, grpcTimeout time.Duration, conf structs.C
 	if err != nil {
 		return nil, errInit("newNode", err)
 	}
+
+	wSettings := &structs.WALSettings{
+		PathWAL:       filepath.Join(walConf.PathWAL, address),
+		SyncInterval:  walConf.SyncInterval,
+		MaxBufferSize: walConf.MaxBufferSize,
+		MaxConcWrite:  walConf.MaxConcWrite,
+	}
+
+	wal, err := wal.New(wSettings, logger)
 
 	logger.Debug(
 		"new node",
@@ -61,6 +74,8 @@ func newNode(address string, port int, grpcTimeout time.Duration, conf structs.C
 		address:     address,
 		port:        port,
 		conn:        conn,
+		conf:        conf,
+		wal:         wal,
 		ptsCh:       make(chan []*pb.Point, 5),
 		metaCh:      make(chan []*pb.Meta, 5),
 		wLimiter:    rate.NewLimiter(rate.Limit(conf.GrpcMaxServerConn)*0.9, conf.GrpcBurstServerConn),
@@ -80,11 +95,13 @@ func (n *node) write(pts []*pb.Point) error {
 
 	if err := n.wLimiter.Wait(ctx); err != nil {
 		logger.Error(
-			"write limit",
+			"write limit exceeded",
 			zap.String("package", "cluster"),
-			zap.String("func", "worker"),
-			zap.Error(err),
+			zap.String("func", "write"),
+			zap.String("error", err.Error()),
 		)
+		// send to wal
+		//n.wal.Add(p *proto.Point)
 		return err
 	}
 
@@ -93,9 +110,10 @@ func (n *node) write(pts []*pb.Point) error {
 		logger.Error(
 			"failed to get stream from server",
 			zap.String("package", "cluster"),
-			zap.String("func", "worker"),
+			zap.String("func", "write"),
 			zap.Error(err),
 		)
+		// send to wal
 		return err
 	}
 
@@ -178,7 +196,6 @@ func (n *node) read(ksid, tsid string, start, end int64) ([]*pb.Point, gobol.Err
 }
 
 func (n *node) meta(metas []*pb.Meta) (<-chan *pb.MetaFound, error) {
-
 	ctx, cancel := context.WithTimeout(context.Background(), n.gRPCtimeout)
 
 	if err := n.mLimiter.Wait(ctx); err != nil {
@@ -188,6 +205,7 @@ func (n *node) meta(metas []*pb.Meta) (<-chan *pb.MetaFound, error) {
 			zap.String("func", "node/meta"),
 			zap.Error(err),
 		)
+		cancel()
 		return nil, err
 	}
 
@@ -199,6 +217,7 @@ func (n *node) meta(metas []*pb.Meta) (<-chan *pb.MetaFound, error) {
 			zap.String("func", "node/meta"),
 			zap.Error(err),
 		)
+		cancel()
 		return nil, err
 	}
 

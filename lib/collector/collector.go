@@ -141,7 +141,7 @@ func (collect *Collector) ReceivedErrorRatio() float64 {
 func (collect *Collector) Stop() {
 	collect.shutdown = true
 	for {
-		if collect.saving <= 0 {
+		if atomic.LoadInt64(&collect.saving) <= 0 {
 			return
 		}
 	}
@@ -209,8 +209,6 @@ func (collect *Collector) HandlePoint(points gorilla.TSDBpoints) (RestErrors, go
 			}
 			mtx.Unlock()
 
-			statsProcTime(m.GetKsid(), time.Since(start), len(points))
-
 		}(rcvMsg)
 	}
 
@@ -249,6 +247,12 @@ func (collect *Collector) HandlePoint(points gorilla.TSDBpoints) (RestErrors, go
 		//gblog.Debug("saving map", zap.String("node", n), zap.Any("points", points))
 		collect.cluster.Write(n, points)
 	}
+
+	go func() {
+		for ks := range keyspaces {
+			statsProcTime(ks, time.Since(start))
+		}
+	}()
 
 	return returnPoints, nil
 
@@ -416,7 +420,7 @@ func (collect *Collector) HandleTxtPacket(rcvMsg gorilla.TSDBpoint) gobol.Error 
 
 	go collect.meta.SaveTxtMeta(pkt)
 
-	statsProcTime(packet.KsID, time.Since(start), 1)
+	statsProcTime(packet.KsID, time.Since(start))
 	return nil
 }
 

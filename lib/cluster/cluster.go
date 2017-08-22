@@ -23,7 +23,7 @@ type state struct {
 	time int64
 }
 
-func New(log *zap.Logger, sto *gorilla.Storage, m *meta.Meta, conf structs.ClusterConfig) (*Cluster, gobol.Error) {
+func New(log *zap.Logger, sto *gorilla.Storage, m *meta.Meta, conf *structs.ClusterConfig, walConf *structs.WALSettings) (*Cluster, gobol.Error) {
 	if sto == nil {
 		return nil, errInit("New", errors.New("storage can't be nil"))
 	}
@@ -66,18 +66,19 @@ func New(log *zap.Logger, sto *gorilla.Storage, m *meta.Meta, conf structs.Clust
 	}
 
 	clr := &Cluster{
-		c:      c,
-		s:      sto,
-		m:      m,
-		ch:     consistentHash.New(),
-		cfg:    &conf,
-		apply:  conf.ApplyWait,
-		nodes:  map[string]*node{},
-		toAdd:  map[string]state{},
-		tag:    conf.Consul.Tag,
-		self:   s,
-		port:   conf.Port,
-		server: server,
+		c:           c,
+		s:           sto,
+		m:           m,
+		ch:          consistentHash.New(),
+		cfg:         conf,
+		walSettings: walConf,
+		apply:       conf.ApplyWait,
+		nodes:       map[string]*node{},
+		toAdd:       map[string]state{},
+		tag:         conf.Consul.Tag,
+		self:        s,
+		port:        conf.Port,
+		server:      server,
 
 		gRPCtimeout: gRPCtimeout,
 	}
@@ -90,12 +91,13 @@ func New(log *zap.Logger, sto *gorilla.Storage, m *meta.Meta, conf structs.Clust
 }
 
 type Cluster struct {
-	s     *gorilla.Storage
-	c     *consul
-	m     *meta.Meta
-	ch    *consistentHash.ConsistentHash
-	cfg   *structs.ClusterConfig
-	apply int64
+	s           *gorilla.Storage
+	c           *consul
+	m           *meta.Meta
+	ch          *consistentHash.ConsistentHash
+	cfg         *structs.ClusterConfig
+	walSettings *structs.WALSettings
+	apply       int64
 
 	server   *server
 	stopServ chan struct{}
@@ -127,29 +129,7 @@ func (c *Cluster) checkCluster(interval time.Duration) {
 
 }
 
-func (c *Cluster) WAL(pts []*pb.Point) error {
-
-	limiter := make(chan interface{}, 5000)
-	defer close(limiter)
-
-	for _, p := range pts {
-		limiter <- struct{}{}
-		if p == nil {
-			continue
-		}
-		go func(p *pb.Point) {
-			gerr := c.s.WAL(p)
-			if gerr != nil {
-				logger.Error(
-					"unable to write in local node",
-					zap.String("package", "cluster"),
-					zap.String("func", "WAL"),
-					zap.Error(gerr),
-				)
-			}
-			<-limiter
-		}(p)
-	}
+func (c *Cluster) replay(pts *pb.Point) error {
 
 	return nil
 
@@ -216,11 +196,11 @@ func (c *Cluster) Read(ksid, tsid string, start, end int64) ([]*pb.Point, gobol.
 		zap.String("func", "Read"),
 	)
 
-	node, err := c.ch.Get([]byte(tsid))
+	singleNode, err := c.ch.Get([]byte(tsid))
 	if err != nil {
 		return nil, errRequest("Write", http.StatusInternalServerError, err)
 	}
-	if node == c.self {
+	if singleNode == c.self {
 		log.Debug("reading from local node")
 		pts, gerr := c.s.Read(ksid, tsid, start, end)
 		if gerr != nil {
@@ -230,7 +210,7 @@ func (c *Cluster) Read(ksid, tsid string, start, end int64) ([]*pb.Point, gobol.
 	}
 
 	c.nMutex.RLock()
-	n := c.nodes[node]
+	n := c.nodes[singleNode]
 	c.nMutex.RUnlock()
 
 	log.Debug(
@@ -254,12 +234,20 @@ func (c *Cluster) Read(ksid, tsid string, start, end int64) ([]*pb.Point, gobol.
 	}
 
 	for _, node := range nodes {
-		if node == c.self {
+		if node == singleNode {
 			continue
 		}
 		c.nMutex.RLock()
 		n := c.nodes[node]
 		c.nMutex.RUnlock()
+
+		if n == nil {
+			log.Error(
+				"node unavailable",
+				zap.String("node", node),
+			)
+			continue
+		}
 
 		log.Debug(
 			"forwarding read as fallback",
@@ -273,7 +261,7 @@ func (c *Cluster) Read(ksid, tsid string, start, end int64) ([]*pb.Point, gobol.
 			continue
 		}
 
-		break
+		return pts, nil
 	}
 
 	return pts, gerr
@@ -373,7 +361,7 @@ func (c *Cluster) getNodes() {
 							continue
 						}
 
-						n, err := newNode(srv.Node.Address, c.port, c.gRPCtimeout, *c.cfg)
+						n, err := newNode(srv.Node.Address, c.port, c.gRPCtimeout, c.cfg, c.walSettings)
 						if err != nil {
 							logger.Error("", zap.Error(err))
 							continue
