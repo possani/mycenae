@@ -47,9 +47,9 @@ func statsBulkPoints(stats *tsstats.StatsTS) {
 }
 
 func statsIncrement(stats *tsstats.StatsTS, metric string, tags map[string]string) {
-	stats.Increment("meta", metric, tags)
+	stats.Increment(packageName, metric, tags)
 }
 
 func statsValueAdd(stats *tsstats.StatsTS, metric string, tags map[string]string, v float64) {
-	stats.ValueAdd("meta", metric, tags, v)
+	stats.ValueAdd(packageName, metric, tags, v)
 }

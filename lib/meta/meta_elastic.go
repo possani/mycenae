@@ -22,6 +22,11 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	elasticMetaType   = "meta"
+	elasticNestedPath = "tagsNested"
+)
+
 type elasticMeta struct {
 	boltc    *bcache.Bcache
 	validKey *regexp.Regexp
@@ -101,6 +106,7 @@ func createElasticMeta(
 	m := &elasticMeta{
 		boltc:       bc,
 		settings:    set,
+		esearch:     es,
 		validKey:    regexp.MustCompile(`^[0-9A-Za-z-._%&#;/]+$`),
 		concBulk:    make(chan struct{}, set.MaxConcurrentBulks),
 		metaPntChan: make(chan *pb.Meta, set.MetaBufferSize),
@@ -133,7 +139,7 @@ func (meta *elasticMeta) metaCoordinator(saveInterval time.Duration, headInterva
 			case <-ticker.C:
 				for ksts := range meta.sm.iter() {
 					//found, gerr := meta.boltc.GetTsNumber(ksts, meta.CheckTSID)
-					found, gerr := meta.CheckTSID("meta", ksts)
+					found, gerr := meta.CheckTSID(elasticMetaType, ksts)
 					if gerr != nil {
 						meta.logger.Error(
 							gerr.Error(),
@@ -260,7 +266,7 @@ func (meta *elasticMeta) Handle(pkt *pb.Meta) bool {
 	if _, ok := meta.sm.get(string(ksts)); !ok {
 		meta.logger.Debug(
 			"adding point in save map",
-			zap.String("package", "meta"),
+			zap.String("package", packageName),
 			zap.String("func", "Handle"),
 			zap.String("ksts", string(ksts)),
 		)
@@ -276,7 +282,7 @@ func (meta *elasticMeta) SaveTxtMeta(packet *pb.Meta) {
 	if len(meta.metaTxtChan) >= meta.settings.MetaBufferSize {
 		meta.logger.Warn(
 			fmt.Sprintf("discarding point: %v", packet),
-			zap.String("package", "meta"),
+			zap.String("package", packageName),
 			zap.String("func", "SaveMeta"),
 		)
 		statsLostMeta(meta.stats)
@@ -311,7 +317,7 @@ func (meta *elasticMeta) generateBulk(packet *pb.Meta, number bool) gobol.Error 
 		metricType = "metric"
 		tagkType = "tagk"
 		tagvType = "tagv"
-		metaType = "meta"
+		metaType = elasticMetaType
 	}
 
 	idx := BulkType{
@@ -442,7 +448,7 @@ func (meta *elasticMeta) saveBulk(body io.Reader) {
 			"Elastic search problem",
 			zap.String("function", "saveBulk"),
 			zap.String("structure", "elasticMeta"),
-			zap.String("package", "meta"),
+			zap.String("package", packageName),
 			zap.Int("status", status),
 			zap.Error(err),
 		)

@@ -9,6 +9,8 @@ import (
 	"github.com/uol/mycenae/lib/tserr"
 )
 
+const packageName = "meta"
+
 func errBR(f, s string, e error) gobol.Error {
 	if e != nil {
 		return tserr.New(
@@ -16,7 +18,7 @@ func errBR(f, s string, e error) gobol.Error {
 			s,
 			http.StatusBadRequest,
 			map[string]interface{}{
-				"package": "meta",
+				"package": packageName,
 				"func":    f,
 			},
 		)
@@ -31,7 +33,7 @@ func errISE(f, s string, e error) gobol.Error {
 			s,
 			http.StatusInternalServerError,
 			map[string]interface{}{
-				"package": "meta",
+				"package": packageName,
 				"func":    f,
 			},
 		)

@@ -100,11 +100,11 @@ func genericBackendTesting(t *testing.T, backend Backend) {
 	})
 	time.Sleep(time.Second * 5)
 
-	found, err := meta.CheckTSID("meta", fmt.Sprintf("%s|%d", ksid, 0))
+	found, err := meta.CheckTSID(elasticMetaType, fmt.Sprintf("%s|%d", ksid, 0))
 	assert.NoError(t, err)
 	assert.False(t, found)
 
-	found, err = meta.CheckTSID("meta", fmt.Sprintf("%s|%s", ksid, tsid))
+	found, err = meta.CheckTSID(elasticMetaType, fmt.Sprintf("%s|%s", ksid, tsid))
 	assert.NoError(t, err)
 	assert.True(t, found)
 }

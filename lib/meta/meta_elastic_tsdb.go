@@ -19,7 +19,7 @@ func (meta *elasticMeta) MetaOpenTSDB(
 	keyspace, id, metric string, tags map[string][]string,
 	size, from int64,
 ) ([]TSDBData, int, gobol.Error) {
-	esType := "meta"
+	esType := elasticMetaType
 	var query elasticQueryWrapper
 	if metric != "" && metric != "*" {
 		metricTerm := elasticTerm{
@@ -32,7 +32,7 @@ func (meta *elasticMeta) MetaOpenTSDB(
 
 	for k, vs := range tags {
 		var esQueryNest elasticNestedQuery
-		esQueryNest.Nested.Path = "tagsNested"
+		esQueryNest.Nested.Path = elasticNestedPath
 		for _, v := range vs {
 			tagKTerm := elasticRegexp{
 				Regexp: map[string]string{
@@ -93,7 +93,7 @@ func (meta *elasticMeta) MetaFilterOpenTSDB(
 	keyspace, id, metric string,
 	filters []structs.TSDBfilter, size int64,
 ) ([]TSDBData, int, gobol.Error) {
-	esType := "meta"
+	esType := elasticMetaType
 	query := elasticQueryWrapper{
 		Size: size,
 	}

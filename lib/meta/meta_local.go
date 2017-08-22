@@ -31,17 +31,17 @@ func (m *localMeta) Handle(pkt *pb.Meta) bool {
 	m.logger.Debug("Handling package",
 		zap.String("function", "Handle"),
 		zap.String("structurte", "localMeta"),
-		zap.String("package", "meta"),
+		zap.String("package", packageName),
 	)
-	lindex := m.index.Get(pkt.GetKsid(), "meta")
+	lindex := m.index.Get(pkt.GetKsid(), elasticMetaType)
 	if lindex == nil {
 		m.CreateIndex(pkt.GetKsid())
-		lindex = m.index.Get(pkt.GetKsid(), "meta")
+		lindex = m.index.Get(pkt.GetKsid(), elasticMetaType)
 		m.logger.Debug("Creating index",
 			zap.String("index", pkt.GetKsid()),
 			zap.String("function", "Handle"),
 			zap.String("structurte", "localMeta"),
-			zap.String("package", "meta"),
+			zap.String("package", packageName),
 		)
 	}
 	found, err := lindex.Exists(index.ParseID(pkt.GetTsid()))
@@ -49,7 +49,7 @@ func (m *localMeta) Handle(pkt *pb.Meta) bool {
 		m.logger.Debug("Error getting index",
 			zap.String("function", "Handle"),
 			zap.String("structurte", "localMeta"),
-			zap.String("package", "meta"),
+			zap.String("package", packageName),
 		)
 	}
 	if !found {
@@ -58,7 +58,7 @@ func (m *localMeta) Handle(pkt *pb.Meta) bool {
 			m.logger.Debug("Error indexing timeseries",
 				zap.String("function", "Handle"),
 				zap.String("structurte", "localMeta"),
-				zap.String("package", "meta"),
+				zap.String("package", packageName),
 			)
 		}
 	}
@@ -138,11 +138,11 @@ func (m *localMeta) ListErrorTags(
 }
 
 func (m *localMeta) CreateIndex(name string) gobol.Error {
-	m.index.Add(name, "meta", index.Create())
+	m.index.Add(name, elasticMetaType, index.Create())
 	return nil
 }
 
 func (m *localMeta) DeleteIndex(index string) gobol.Error {
-	m.index.Delete(index, "meta")
+	m.index.Delete(index, elasticMetaType)
 	return nil
 }
