@@ -128,7 +128,8 @@ func main() {
 	strg := gorilla.New(tsLogger, tssts, d, wal)
 	strg.Start()
 
-	cluster, err := cluster.New(tsLogger, strg, meta, &settings.Cluster, settings.WAL)
+
+	cluster, err := cluster.New(tsLogger, tssts, strg, meta, &settings.Cluster, settings.WAL)
 	if err != nil {
 		tsLogger.Fatal("", zap.Error(err))
 	}
