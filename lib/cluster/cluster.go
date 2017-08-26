@@ -12,17 +12,15 @@ import (
 	"github.com/uol/mycenae/lib/gorilla"
 	"github.com/uol/mycenae/lib/meta"
 	pb "github.com/uol/mycenae/lib/proto"
-	"github.com/uol/mycenae/lib/tsstats"
-	"github.com/uol/mycenae/lib/wal"
 	"github.com/uol/mycenae/lib/structs"
+	"github.com/uol/mycenae/lib/tsstats"
 	"go.uber.org/zap"
 )
 
 var (
 	logger *zap.Logger
-	stats *tsstats.StatsTS
+	stats  *tsstats.StatsTS
 )
-
 
 type state struct {
 	add  bool
@@ -31,8 +29,7 @@ type state struct {
 
 func New(log *zap.Logger, sts *tsstats.StatsTS, sto *gorilla.Storage, m *meta.Meta, conf *structs.ClusterConfig, walConf *structs.WALSettings) (*Cluster, gobol.Error) {
 
-  
-  stats = sts
+	stats = sts
 	if sto == nil {
 		return nil, errInit("New", errors.New("storage can't be nil"))
 	}
