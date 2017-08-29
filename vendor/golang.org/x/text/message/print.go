@@ -237,7 +237,7 @@ func (p *printer) fmtFloat(v float64, size int, verb rune) {
 		if p.fmt.sharp || p.fmt.sharpV {
 			p.fmt.fmt_float(v, size, verb, -1)
 		} else {
-			p.fmtVariableFloat(v, size)
+			p.fmtVariableFloat(v, size, -1)
 		}
 	case 'e', 'E':
 		if p.fmt.sharp || p.fmt.sharpV {
@@ -284,7 +284,7 @@ func (p *printer) initDecimal(minFrac, maxFrac int) {
 	f.MinIntegerDigits = 1
 	f.MaxIntegerDigits = 0
 	f.MinFractionDigits = uint8(minFrac)
-	f.MaxFractionDigits = uint16(maxFrac)
+	f.MaxFractionDigits = uint8(maxFrac)
 	p.setFlags(f)
 	f.PadRune = 0
 	if p.fmt.widPresent {
@@ -308,13 +308,8 @@ func (p *printer) initDecimal(minFrac, maxFrac int) {
 
 func (p *printer) initScientific(minFrac, maxFrac int) {
 	f := &p.toScientific
-	if maxFrac < 0 {
-		f.SetPrecision(maxFrac)
-	} else {
-		f.SetPrecision(maxFrac + 1)
-		f.MinFractionDigits = uint8(minFrac)
-		f.MaxFractionDigits = uint16(maxFrac)
-	}
+	f.MinFractionDigits = uint8(minFrac)
+	f.MaxFractionDigits = uint8(maxFrac)
 	f.MinExponentDigits = 2
 	p.setFlags(f)
 	f.PadRune = 0
@@ -333,6 +328,8 @@ func (p *printer) initScientific(minFrac, maxFrac int) {
 
 func (p *printer) fmtDecimalInt(v uint64, isSigned bool) {
 	var d number.Decimal
+	p.toDecimal.RoundingContext.Scale = 0
+	d.ConvertInt(&p.toDecimal.RoundingContext, isSigned, v)
 
 	f := &p.toDecimal
 	if p.fmt.precPresent {
@@ -347,7 +344,6 @@ func (p *printer) fmtDecimalInt(v uint64, isSigned bool) {
 	} else {
 		p.initDecimal(0, 0)
 	}
-	d.ConvertInt(p.toDecimal.RoundingContext, isSigned, v)
 
 	out := p.toDecimal.Format([]byte(nil), &d)
 	p.Buffer.Write(out)
@@ -358,21 +354,22 @@ func (p *printer) fmtDecimalFloat(v float64, size, prec int) {
 	if p.fmt.precPresent {
 		prec = p.fmt.prec
 	}
+	p.toDecimal.RoundingContext.Scale = int32(prec)
+	d.ConvertFloat(&p.toDecimal.RoundingContext, v, size)
+
 	p.initDecimal(prec, prec)
-	d.ConvertFloat(p.toDecimal.RoundingContext, v, size)
 
 	out := p.toDecimal.Format([]byte(nil), &d)
 	p.Buffer.Write(out)
 }
 
-func (p *printer) fmtVariableFloat(v float64, size int) {
-	prec := -1
+func (p *printer) fmtVariableFloat(v float64, size, prec int) {
 	if p.fmt.precPresent {
 		prec = p.fmt.prec
 	}
 	var d number.Decimal
-	p.initScientific(0, prec)
-	d.ConvertFloat(p.toScientific.RoundingContext, v, size)
+	p.toScientific.RoundingContext.Precision = int32(prec)
+	d.ConvertFloat(&p.toScientific.RoundingContext, v, size)
 
 	// Copy logic of 'g' formatting from strconv. It is simplified a bit as
 	// we don't have to mind having prec > len(d.Digits).
@@ -410,9 +407,10 @@ func (p *printer) fmtScientific(v float64, size, prec int) {
 	if p.fmt.precPresent {
 		prec = p.fmt.prec
 	}
+	p.toScientific.RoundingContext.Precision = int32(prec)
+	d.ConvertFloat(&p.toScientific.RoundingContext, v, size)
+
 	p.initScientific(prec, prec)
-	rc := p.toScientific.RoundingContext
-	d.ConvertFloat(rc, v, size)
 
 	out := p.toScientific.Format([]byte(nil), &d)
 	p.Buffer.Write(out)

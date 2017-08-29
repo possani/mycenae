@@ -1789,14 +1789,6 @@ func (rl *clientConnReadLoop) processData(f *DataFrame) error {
 		}
 		return nil
 	}
-	if !cs.firstByte {
-		cc.logf("protocol error: received DATA before a HEADERS frame")
-		rl.endStreamError(cs, StreamError{
-			StreamID: f.StreamID,
-			Code:     ErrCodeProtocol,
-		})
-		return nil
-	}
 	if f.Length > 0 {
 		// Check connection-level flow control.
 		cc.mu.Lock()
