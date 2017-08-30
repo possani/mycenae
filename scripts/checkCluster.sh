@@ -14,4 +14,4 @@ if [ "$status" != "404" ]; then
 fi
 
 schemas=$(docker exec cassandra1 nodetool describecluster | grep -Eo '[a-z0-9-]+: \[([0-9\.]+(,\ )?)*\]' | wc -l)
-curl -v -XPUT http://$cs:8500/v1/kv/schema -d '{"timestamp":'"$now"', "total": '"$schemas"'}'
+curl --silent -XPUT http://$cs:8500/v1/kv/schema -d '{"timestamp":'"$now"', "total": '"$schemas"'}'
