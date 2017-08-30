@@ -241,6 +241,10 @@ func (c *Consul) GetLock() (bool, gobol.Error) {
 		return false, errRequest("GetLock", http.StatusInternalServerError, errors.New("Schema status was not updated in the last two hours"))
 	}
 
+	if schema.Total > 1 {
+		return false, errRequest("GetLock", http.StatusInternalServerError, errors.New("More than 1 schema was found"))
+	}
+
 	ikeyspaceLocked, err = c.readKey("keyspaceLocked")
 	if err != nil {
 		return false, errRequest("GetLock", http.StatusInternalServerError, err)
