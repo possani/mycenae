@@ -101,6 +101,8 @@ type Consul struct {
 	agentAPI   string
 	healthAPI  string
 	kvAPI      string
+	sessionAPI string
+	renewAPI   string
 }
 
 type KVPair struct {
@@ -118,6 +120,19 @@ type KVPairs []KVPair
 type Schema struct {
 	Timestamp int64 `json:"timestamp"`
 	Total     int   `json:"total"`
+}
+
+type Session struct {
+	LockDelay string //"15s"
+	Name      string
+	Node      string
+	Checks    []string
+	Behavior  string //"release"
+	TTL       string //"30s"
+}
+
+type SessionResponse struct {
+	ID string
 }
 
 func New(conf ConsulConfig) (*Consul, gobol.Error) {
@@ -159,6 +174,8 @@ func New(conf ConsulConfig) (*Consul, gobol.Error) {
 		agentAPI:   fmt.Sprintf("%s/v1/agent/self", address),
 		healthAPI:  fmt.Sprintf("%s/v1/health/service/%s", address, conf.Service),
 		kvAPI:      fmt.Sprintf("%s/v1/kv/", address),
+		sessionAPI: fmt.Sprintf("%s/v1/session/create", address),
+		renewAPI:   fmt.Sprintf("%s/v1/session/renew/", address),
 		token:      conf.Token,
 	}, nil
 }
@@ -202,7 +219,7 @@ func (c *Consul) GetSelf() (string, gobol.Error) {
 	}
 
 	if resp.StatusCode >= 300 {
-		return "", errRequest("getSelf", resp.StatusCode, err)
+		return "", errRequest("getSelf", resp.StatusCode, fmt.Errorf("Got status code %d", resp.StatusCode))
 	}
 
 	dec := json.NewDecoder(resp.Body)
@@ -217,10 +234,9 @@ func (c *Consul) GetSelf() (string, gobol.Error) {
 	return self.Config.NodeID, nil
 }
 
-func (c *Consul) GetLock() (bool, gobol.Error) {
+func (c *Consul) GetLock(ksname string) (bool, gobol.Error) {
 
 	var err error
-	var ikeyspaceLocked interface{}
 
 	schemaRaw, gerr := c.readKey("schema")
 	if gerr != nil {
@@ -245,64 +261,55 @@ func (c *Consul) GetLock() (bool, gobol.Error) {
 		return false, errRequest("GetLock", http.StatusInternalServerError, errors.New("More than 1 schema was found"))
 	}
 
-	ikeyspaceLocked, err = c.readKey("keyspaceLocked")
+	session, err := c.createSession()
 	if err != nil {
 		return false, errRequest("GetLock", http.StatusInternalServerError, err)
 	}
 
-	i := 0
-	for ikeyspaceLocked != nil {
-		ikeyspaceLocked, err = c.readKey("keyspaceLocked")
+	acquired, i := false, 1
+	for !acquired {
+
+		if i%30 == 0 {
+			req, err := http.NewRequest("PUT", c.renewAPI+session, nil)
+			if err != nil {
+				return false, errRequest("GetLock", http.StatusInternalServerError, err)
+			}
+			req.Header.Add("X-Consul-Token", c.token)
+
+			_, err = c.c.Do(req)
+			if err != nil {
+				return false, errRequest("GetLock", http.StatusInternalServerError, err)
+			}
+		}
+
+		if i == 60 {
+			return false, errRequest("GetLock", http.StatusLocked, errors.New("Another keyspace is being created"))
+		}
+
+		req, err := http.NewRequest("PUT", c.kvAPI+"keyspaceBeingCreated?&acquire="+session, strings.NewReader(ksname))
+		if err != nil {
+			return false, errRequest("GetLock", http.StatusInternalServerError, err)
+		}
+		req.Header.Add("X-Consul-Token", c.token)
+
+		resp, err := c.c.Do(req)
 		if err != nil {
 			return false, errRequest("GetLock", http.StatusInternalServerError, err)
 		}
 
-		if i == 60 {
-			return false, errRequest("GetLock", http.StatusLocked, nil)
+		if resp.StatusCode >= 300 {
+			return false, errRequest("GetLock", resp.StatusCode, fmt.Errorf("Got status code %d", resp.StatusCode))
+		}
+
+		dec := json.NewDecoder(resp.Body)
+
+		err = dec.Decode(&acquired)
+		if err != nil {
+			return false, errRequest("GetLock", http.StatusInternalServerError, err)
 		}
 
 		time.Sleep(time.Second)
 		i++
-	}
-
-	name, err := os.Hostname()
-	if err != nil {
-		return false, errRequest("GetLock", http.StatusInternalServerError, err)
-	}
-
-	req, err := http.NewRequest("PUT", c.kvAPI+"keyspaceLocked", strings.NewReader(name))
-	if err != nil {
-		return false, errRequest("GetLock", http.StatusInternalServerError, err)
-	}
-	req.Header.Add("X-Consul-Token", c.token)
-
-	resp, err := c.c.Do(req)
-	if err != nil {
-		return false, errRequest("GetLock", http.StatusInternalServerError, err)
-	}
-
-	if resp.StatusCode >= 300 {
-		return false, errRequest("GetLock", resp.StatusCode, err)
-	}
-
-	return true, nil
-}
-
-func (c *Consul) ReleaseLock() (bool, gobol.Error) {
-
-	req, err := http.NewRequest("DELETE", c.kvAPI+"keyspaceLocked", nil)
-	if err != nil {
-		return false, errRequest("ReleaseLock", http.StatusInternalServerError, err)
-	}
-	req.Header.Add("X-Consul-Token", c.token)
-
-	resp, err := c.c.Do(req)
-	if err != nil {
-		return false, errRequest("ReleaseLock", http.StatusInternalServerError, err)
-	}
-
-	if resp.StatusCode >= 300 {
-		return false, errRequest("ReleaseLock", resp.StatusCode, err)
 	}
 
 	return true, nil
@@ -326,7 +333,7 @@ func (c *Consul) readKey(key string) (interface{}, gobol.Error) {
 	}
 
 	if resp.StatusCode >= 300 {
-		return nil, errRequest("readKey", resp.StatusCode, err)
+		return nil, errRequest("readKey", resp.StatusCode, fmt.Errorf("Got status code %d", resp.StatusCode))
 	}
 
 	dec := json.NewDecoder(resp.Body)
@@ -339,4 +346,48 @@ func (c *Consul) readKey(key string) (interface{}, gobol.Error) {
 	}
 
 	return value[0].Value, nil
+}
+
+func (c *Consul) createSession() (string, gobol.Error) {
+
+	name, err := os.Hostname()
+	if err != nil {
+		return "", errRequest("createSession", http.StatusInternalServerError, err)
+	}
+
+	payload, err := json.Marshal(Session{
+		LockDelay: "15s",
+		Node:      name,
+		Behavior:  "release",
+		TTL:       "30s",
+	})
+	if err != nil {
+		return "", errRequest("createSession", http.StatusInternalServerError, err)
+	}
+
+	req, err := http.NewRequest("PUT", c.sessionAPI, strings.NewReader(string(payload)))
+	if err != nil {
+		return "", errRequest("createSession", http.StatusInternalServerError, err)
+	}
+	req.Header.Add("X-Consul-Token", c.token)
+
+	resp, err := c.c.Do(req)
+	if err != nil {
+		return "", errRequest("createSession", http.StatusInternalServerError, err)
+	}
+
+	if resp.StatusCode >= 300 {
+		return "", errRequest("createSession", resp.StatusCode, fmt.Errorf("Got status code %d", resp.StatusCode))
+	}
+
+	dec := json.NewDecoder(resp.Body)
+
+	var sr SessionResponse
+
+	err = dec.Decode(&sr)
+	if err != nil {
+		return "", errRequest("createSession", http.StatusInternalServerError, err)
+	}
+
+	return sr.ID, nil
 }

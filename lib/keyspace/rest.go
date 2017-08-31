@@ -37,13 +37,13 @@ func (kspace *Keyspace) Create(w http.ResponseWriter, r *http.Request, ps httpro
 
 	ksc.Name = ks
 
-	locked, gerr := kspace.consul.GetLock()
+	locked, gerr := kspace.consul.GetLock(ks)
 	if !locked {
 		rip.AddStatsMap(r, map[string]string{"path": "/keyspaces/#keyspace"})
 		rip.Fail(w, gerr)
 		return
 	}
-	defer kspace.consul.ReleaseLock()
+	//defer kspace.consul.ReleaseLock()
 
 	keyspaceKey, gerr := kspace.createKeyspace(ksc)
 	if gerr != nil {

@@ -261,6 +261,52 @@ func TestKeyspaceCreateSuccessRF3(t *testing.T) {
 	checkKeyspacePropertiesAndIndex(data, t)
 }
 
+/*
+func TestKeyspaceCreateFailMoreThanOneSchema(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+
+	client := &http.Client{}
+
+	req, err := http.NewRequest("DELETE", "http://consulServer:8500/v1/kv/schema", nil)
+	if err != nil {
+		t.Error(err, t)
+		t.SkipNow()
+	}
+
+	_, err = client.Do(req)
+	if err != nil {
+		t.Error(err, t)
+		t.SkipNow()
+	}
+
+	data := getKeyspace()
+
+	var expectedResp = tools.Error{
+		Error:   "Schema status not found",
+		Message: "Schema status not found",
+	}
+
+	path := fmt.Sprintf("keyspaces/%s", data.Name)
+	code, resp, err := mycenaeTools.HTTP.POST(path, data.Marshal())
+	if err != nil {
+		t.Error(err, t)
+		t.SkipNow()
+	}
+
+	var respErr tools.Error
+	err = json.Unmarshal(resp, &respErr)
+	if err != nil {
+		t.Error(err, t)
+		t.SkipNow()
+	}
+
+	assert.Equal(t, http.StatusInternalServerError, code)
+	assert.Equal(t, expectedResp, respErr)
+	assert.Equal(t, 0, mycenaeTools.Cassandra.Timeseries.CountTsKeyspaceByName(data.Name))
+}
+*/
 func TestKeyspaceCreateFailDCError(t *testing.T) {
 	t.Parallel()
 	if testing.Short() {
